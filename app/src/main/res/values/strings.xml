@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Engrisk</string>
+    <string name="lesson">Bài học</string>
+    <string name="vocabulary">Từ vựng</string>
+    <string name="progress">Tiến trình</string>
+    <string name="account">Tài khoản</string>
+</resources>

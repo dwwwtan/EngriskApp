@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+<!--   Bo góc cho đẹp hơn-->
+    <item android:state_enabled="false" android:drawable="@color/disabled_background" />
+    <item android:state_pressed="true" android:drawable="@color/pressed_background" />
+    <item android:drawable="@color/default_background" />
+    <item android:state_focused="true" android:drawable="@color/default_background" />
+    <item android:state_selected="true" android:drawable="@color/default_background" />
+    <item android:state_activated="true" android:drawable="@color/default_background" />
+    <item android:state_hovered="true" android:drawable="@color/default_background" />
+    <item android:state_checked="true" android:drawable="@color/default_background" />
+    <item android:state_enabled="true" android:drawable="@color/default_background" />
+    <item android:state_focused="false" android:drawable="@color/default_background" />
+    <item android:state_selected="false" android:drawable="@color/default_background" />
+    <item android:state_activated="false" android:drawable="@color/default_background" />
+    <item android:state_hovered="false" android:drawable="@color/default_background" />
+    <item android:state_checked="false" android:drawable="@color/default_background" />
+
+</selector>

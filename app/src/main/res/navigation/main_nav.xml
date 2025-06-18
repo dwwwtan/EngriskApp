@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_nav"
+    app:startDestination="@id/nav_lesson">
+
+    <!-- Lesson Fragment -->
+    <fragment
+        android:id="@+id/nav_lesson"
+        android:name="com.dex.engrisk.lesson.LessonFragment"
+        android:label="Bài học"
+        tools:layout="@layout/fragment_lesson" >
+
+        <action
+            android:id="@+id/action_to_lessonListFragment"
+            app:destination="@id/lessonListFragment" />
+
+    </fragment>
+
+    <!-- Vocabulary Fragment -->
+    <fragment
+        android:id="@+id/nav_vocabulary"
+        android:name="com.dex.engrisk.vocabulary.VocabularyFragment"
+        android:label="Từ vựng"
+        tools:layout="@layout/fragment_vocabulary" >
+        <action
+            android:id="@+id/action_vocabularyFragment_to_flashcardFragment"
+            app:destination="@id/flashcardFragment" />
+    </fragment>
+
+    <!-- Progress Fragments -->
+    <fragment
+        android:id="@+id/nav_progress"
+        android:name="com.dex.engrisk.progress.ProgressFragment"
+        android:label="Tiến độ"
+        tools:layout="@layout/fragment_progress" />
+
+    <!-- Profile Fragment -->
+    <fragment
+        android:id="@+id/nav_profile"
+        android:name="com.dex.engrisk.user.ProfileFragment"
+        android:label="Tài khoản"
+        tools:layout="@layout/fragment_profile" />
+
+    <!-- Lessons list -->
+    <fragment
+        android:id="@+id/lessonListFragment"
+        android:name="com.dex.engrisk.lesson.LessonListFragment"
+        android:label="Danh sách bài học"
+        tools:layout="@layout/fragment_lesson_list">
+        <argument
+            android:name="levelName"
+            app:argType="string" />
+        <action
+            android:id="@+id/action_to_translateFragment"
+            app:destination="@id/translateFragment" />
+    </fragment>
+
+    <!-- Lesson Detail -->
+    <fragment
+        android:id="@+id/translateFragment"
+        android:name="com.dex.engrisk.lesson.lessondetail.TranslateFragment"
+        android:label="Làm bài"
+        tools:layout="@layout/fragment_translate" >
+        <argument
+            android:name="lessonId"
+            app:argType="string" />
+    </fragment>
+
+    <!-- Flashcard Fragment -->
+    <fragment
+        android:id="@+id/flashcardFragment"
+        android:name="com.dex.engrisk.vocabulary.flashcard.FlashcardFragment"
+        android:label="Học Flashcard"
+        tools:layout="@layout/fragment_flashcard" />
+
+</navigation>
