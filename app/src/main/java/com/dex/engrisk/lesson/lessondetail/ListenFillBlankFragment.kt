@@ -1,27 +1,31 @@
 package com.dex.engrisk.lesson.lessondetail
 
 import android.os.Bundle
+import android.speech.tts.TextToSpeech
 import android.util.Log
+import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
-import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.dex.engrisk.R
-import com.dex.engrisk.databinding.FragmentTranslateBinding
+import com.dex.engrisk.databinding.FragmentListenFillBlankBinding
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import java.util.Locale
 
-class TranslateFragment : Fragment() {
+// Thêm TextToSpeech.OnInitListener để lắng nghe khi TTS sẵn sàng
+class ListenFillBlankFragment : Fragment(), TextToSpeech.OnInitListener {
 
-    private val TAG = "TranslateFragment"
-    private lateinit var binding: FragmentTranslateBinding
+    private val TAG = "ListenFillBlankFragment"
+    private lateinit var binding: FragmentListenFillBlankBinding
+    private lateinit var tts: TextToSpeech
     private lateinit var firebaseAuth: FirebaseAuth
     private lateinit var db: FirebaseFirestore
 
-    // Biến trạng thái
+    // Biến trạng thái game
     private var questions: List<Map<String, String>> = emptyList()
     private var currentQuestionIndex = 0
     private var score = 0
@@ -31,7 +35,9 @@ class TranslateFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentTranslateBinding.inflate(inflater, container, false)
+        binding = FragmentListenFillBlankBinding.inflate(inflater, container, false)
+        // Khởi tạo TTS
+        tts = TextToSpeech(requireContext(), this)
         return binding.root
     }
 
@@ -48,7 +54,10 @@ class TranslateFragment : Fragment() {
             Log.e(TAG, "Lesson ID is null!")
         }
 
-        // --- LOGIC MỚI: GÁN SỰ KIỆN CHO CÁC NÚT ---
+        binding.btnListen.setOnClickListener {
+            speakCurrentSentence()
+        }
+
         binding.btnCheck.setOnClickListener {
             handleCheckAnswer()
         }
@@ -83,12 +92,42 @@ class TranslateFragment : Fragment() {
             }
     }
 
+    // --- HÀM CỦA OnInitListener ---
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            // Đặt ngôn ngữ là Tiếng Anh (Mỹ)
+            val result = tts.setLanguage(Locale.US)
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Log.e(TAG, "The Language specified is not supported!")
+            }
+        } else {
+            Log.e(TAG, "TTS Initialization Failed!")
+        }
+    }
+
+    private fun speakCurrentSentence() {
+        if (currentQuestionIndex < questions.size) {
+            val sourceSentence = questions[currentQuestionIndex]["full_sentence"] ?: ""
+            // Phát âm câu
+            tts.speak(sourceSentence, TextToSpeech.QUEUE_FLUSH, null, "")
+        }
+    }
+
     private fun displayCurrentQuestion() {
         if (currentQuestionIndex < questions.size) {
-            val sourceSentence = questions[currentQuestionIndex]["vi_sentence"] ?: "" // Mặc định là dịch Việt - Anh
+
+            // Lấy dữ liệu từ Map câu hỏi
+            val sourceSentence = questions[currentQuestionIndex]["full_sentence"] ?: ""
+            val blankWord = questions[currentQuestionIndex]["blank_word"] ?: ""
+
+            // --- ĐÂY LÀ DÒNG QUAN TRỌNG NHẤT ---
+            // Nó lấy câu đầy đủ, tìm từ cần điền (không phân biệt chữ hoa-thường)
+            // và thay thế nó bằng "______".
+            val sentenceWithBlank = sourceSentence.replace(blankWord, "______", ignoreCase = true)
+            // Hiển thị câu đã được xử lý ra giao diện
+            binding.tvSourceSentence.text = sentenceWithBlank
 
             binding.tvProgress.text = "Câu hỏi: ${currentQuestionIndex + 1}/${questions.size}"
-            binding.tvSourceSentence.text = sourceSentence
             binding.etAnswer.text?.clear()
             binding.etAnswer.isEnabled = true // Đảm bảo ô nhập được bật
 
@@ -105,7 +144,7 @@ class TranslateFragment : Fragment() {
     // --- HÀM MỚI: XỬ LÝ KHI NHẤN NÚT "KIỂM TRA" ---
     private fun handleCheckAnswer() {
         val userAnswer = binding.etAnswer.text.toString().trim()
-        val correctAnswer = questions[currentQuestionIndex]["en_sentence"] ?: ""
+        val correctAnswer = questions[currentQuestionIndex]["blank_word"] ?: ""
 
         binding.etAnswer.isEnabled = false // Vô hiệu hóa ô nhập sau khi kiểm tra
         binding.layoutFeedback.visibility = View.VISIBLE
@@ -182,5 +221,15 @@ class TranslateFragment : Fragment() {
                 // Lưu ý: Kể cả khi lưu lỗi, ta vẫn không cần báo cho người dùng
                 // vì đây là một tác vụ nền, không ảnh hưởng đến trải nghiệm của họ.
             }
+    }
+
+    // --- QUẢN LÝ VÒNG ĐỜI CỦA TTS (Rất quan trọng) ---
+    override fun onDestroy() {
+        // Giải phóng tài nguyên TTS khi Fragment bị hủy để tránh memory leak
+        if (::tts.isInitialized) {
+            tts.stop()
+            tts.shutdown()
+        }
+        super.onDestroy()
     }
 }

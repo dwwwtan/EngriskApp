@@ -55,6 +55,14 @@
         <action
             android:id="@+id/action_to_translateFragment"
             app:destination="@id/translateFragment" />
+
+        <action
+            android:id="@+id/action_to_listenFillBlankFragment"
+            app:destination="@id/listenFillBlankFragment" />
+
+        <action
+            android:id="@+id/action_to_listenChooseCorrectFragment"
+            app:destination="@id/listenChooseCorrectFragment" />
     </fragment>
 
     <!-- Lesson Detail -->
@@ -63,6 +71,26 @@
         android:name="com.dex.engrisk.lesson.lessondetail.TranslateFragment"
         android:label="Làm bài"
         tools:layout="@layout/fragment_translate" >
+        <argument
+            android:name="lessonId"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/listenFillBlankFragment"
+        android:name="com.dex.engrisk.lesson.lessondetail.ListenFillBlankFragment"
+        android:label="Nghe và điền từ"
+        tools:layout="@layout/fragment_listen_fill_blank">
+        <argument
+            android:name="lessonId"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/listenChooseCorrectFragment"
+        android:name="com.dex.engrisk.lesson.lessondetail.ListenChooseCorrectFragment"
+        android:label="Nghe và Chọn đáp án"
+        tools:layout="@layout/fragment_listen_choose_correct">
         <argument
             android:name="lessonId"
             app:argType="string" />

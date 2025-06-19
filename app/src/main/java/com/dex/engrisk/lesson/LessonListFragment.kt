@@ -61,8 +61,18 @@ class LessonListFragment : Fragment() {
                     findNavController().navigate(R.id.action_to_translateFragment, bundle)
                 }
 
-                // Sau này có thể thêm các case khác
-                // "LISTEN_FILL_BLANK" -> { ... }
+                // THÊM CASE MỚI
+                "LISTEN_FILL_BLANK" -> {
+                    val bundle = bundleOf("lessonId" to clickedLesson.id)
+                    findNavController().navigate(R.id.action_to_listenFillBlankFragment, bundle)
+                }
+
+                // ...
+                "LISTEN_CHOOSE_CORRECT" -> {
+                    val bundle = bundleOf("lessonId" to clickedLesson.id)
+                    findNavController().navigate(R.id.action_to_listenChooseCorrectFragment, bundle)
+                }
+// ...
 
                 else -> {
                     // Nếu gặp loại bài học chưa được hỗ trợ
