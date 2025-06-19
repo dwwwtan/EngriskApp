@@ -15,7 +15,8 @@ class LessonAdapter(
     RecyclerView.Adapter<LessonAdapter.LessonViewHolder>() {
 
     // Lớp ViewHolder chứa tham chiếu đến các view trong một item
-    inner class LessonViewHolder(val binding: LessonItemBinding) : RecyclerView.ViewHolder(binding.root)
+    inner class LessonViewHolder(val binding: LessonItemBinding) :
+        RecyclerView.ViewHolder(binding.root)
 
     // Tạo ViewHolder mới
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): LessonViewHolder {

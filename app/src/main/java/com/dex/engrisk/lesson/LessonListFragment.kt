@@ -10,18 +10,19 @@ import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.dex.engrisk.R
 import com.dex.engrisk.adapter.LessonAdapter
 import com.dex.engrisk.databinding.FragmentLessonListBinding
 import com.dex.engrisk.model.Lesson
 import com.google.firebase.firestore.FirebaseFirestore
-import com.dex.engrisk.R
 import com.google.firebase.firestore.Query
 
 class LessonListFragment : Fragment() {
 
-    private val TAG = "BeginnerLessonFragment"
+    private val TAG = "LessonListFragment"
     private lateinit var binding: FragmentLessonListBinding
     private lateinit var lessonAdapter: LessonAdapter
+    private lateinit var db: FirebaseFirestore
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -83,7 +84,7 @@ class LessonListFragment : Fragment() {
     private fun fetchLessons(levelName: String) {
         binding.progressBar.visibility = View.VISIBLE
 
-        val db = FirebaseFirestore.getInstance()
+        db = FirebaseFirestore.getInstance()
         db.collection("lessons")
             .whereEqualTo("level", levelName) // <-- SỬ DỤNG THAM SỐ Ở ĐÂY
             .orderBy("order", Query.Direction.ASCENDING)

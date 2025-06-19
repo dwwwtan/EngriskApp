@@ -1,30 +1,16 @@
-package com.dex.engrisk // Thay bằng package name của bạn
+package com.dex.engrisk
 
 import android.os.Bundle
 import android.util.Log
-import androidx.appcompat.app.AppCompatActivity
-import com.dex.engrisk.databinding.ActivityMainBinding
-import com.google.android.material.navigation.NavigationBarView
-import android.view.Menu
-import android.view.MenuItem
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import com.dex.engrisk.model.User
-import androidx.appcompat.app.AlertDialog
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.fragment.app.commit
-import androidx.core.content.edit
+import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
-import com.dex.engrisk.lesson.LessonFragment
-import com.dex.engrisk.user.ProfileFragment
-import com.dex.engrisk.progress.ProgressFragment
+import com.dex.engrisk.databinding.ActivityMainBinding
+import com.dex.engrisk.model.User
 import com.dex.engrisk.viewmodel.MainViewModel
-import com.dex.engrisk.vocabulary.VocabularyFragment
-import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -38,7 +24,6 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val TAG = "MainActivity"
-        //
     }
 
     // Khởi tạo ViewModel một cách an toàn, gắn liền với vòng đời của MainActivity
@@ -69,12 +54,14 @@ class MainActivity : AppCompatActivity() {
         binding.bottomNav.setupWithNavController(navController)
     }
 
+    /**
+     * Hàm này sẽ lấy thông tin người dùng từ Firestore và đặt vào ViewModel.
+     */
     private fun fetchUserProfile() {
         val uid = firebaseAuth.currentUser?.uid
         if (uid == null) {
             return
         }
-
         db.collection("users").document(uid).get()
             .addOnSuccessListener { document ->
                 if (document != null && document.exists()) {

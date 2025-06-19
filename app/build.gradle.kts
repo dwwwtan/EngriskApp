@@ -82,8 +82,9 @@ dependencies {
     // LiveData
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.9.1")
 
-    // Fragment KTX
+    // Fragment KTX (để dùng by viewModels())
     implementation("androidx.fragment:fragment-ktx:1.8.8")
+
     // Compose
     implementation("androidx.fragment:fragment-compose:1.8.8")
 
