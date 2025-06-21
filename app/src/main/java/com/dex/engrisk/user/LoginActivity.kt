@@ -4,12 +4,12 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.util.Patterns
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.dex.engrisk.MainActivity
 import com.dex.engrisk.databinding.ActivityLoginBinding
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 
 class LoginActivity : AppCompatActivity() {
 
@@ -17,37 +17,36 @@ class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding
     private lateinit var firebaseAuth: FirebaseAuth
-    private lateinit var db: FirebaseFirestore
 
     /**
      * Hàm onStart() được gọi mỗi khi Activity hiển thị ra cho người dùng.
-     * Đây là nơi lý tưởng để kiểm tra xem người dùng đã đăng nhập từ phiên trước chưa.
      */
     override fun onStart() {
         super.onStart()
         val currentUser = firebaseAuth.currentUser
         if (currentUser != null) {
             // Nếu người dùng đã đăng nhập, bỏ qua màn hình này và vào thẳng app
-            Toast.makeText(this, "Đang tự động đăng nhập...", Toast.LENGTH_SHORT).show()
-            fetchUserDataAndNavigate(currentUser.uid)
+            navigateToMain()
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Khởi tạo Firebase
+        initFirebase()
+        setupClickListeners()
+    }
+
+    // Hàm khởi tạo Firebase Auth và Firestore
+    private fun initFirebase() {
         firebaseAuth = FirebaseAuth.getInstance()
-        db = FirebaseFirestore.getInstance()
+    }
 
-        // Thiết lập sự kiện click cho nút "Đăng nhập"
-        binding.btnLogin.setOnClickListener {
-            validateInputAndLogin()
-        }
-
-        // Thiết lập sự kiện click cho text "Đăng ký ngay"
+    private fun setupClickListeners() {
+        binding.btnLogin.setOnClickListener { validateInputAndLogin() }
         binding.tvRegisterPrompt.setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
         }
@@ -61,7 +60,8 @@ class LoginActivity : AppCompatActivity() {
         val password = binding.etPassword.text.toString().trim()
 
         if (isInputValid(email, password)) {
-            binding.btnLogin.isEnabled = false // Vô hiệu hóa nút
+            binding.progressBar.visibility = View.VISIBLE
+            binding.btnLogin.isEnabled = false
             loginUser(email, password)
         }
     }
@@ -96,50 +96,21 @@ class LoginActivity : AppCompatActivity() {
             .addOnSuccessListener { authResult ->
                 Log.d(TAG, "signInWithEmail:success")
                 val uid = authResult.user!!.uid
-                // Đăng nhập Auth thành công, giờ lấy dữ liệu từ Firestore
-                fetchUserDataAndNavigate(uid)
+                Toast.makeText(this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show()
+                navigateToMain()
             }
             .addOnFailureListener { e ->
                 Log.w(TAG, "signInWithEmail:failure", e)
                 Toast.makeText(this, "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.", Toast.LENGTH_LONG).show()
-                binding.btnLogin.isEnabled = true // Bật lại nút
+                binding.progressBar.visibility = View.GONE
+                binding.btnLogin.isEnabled = true
             }
     }
 
-    /**
-     * Hàm này nhận UID, truy vấn Firestore để lấy hồ sơ người dùng,
-     * sau đó điều hướng đến MainActivity.
-     */
-    private fun fetchUserDataAndNavigate(uid: String) {
-        db.collection("users").document(uid).get()
-            .addOnSuccessListener { documentSnapshot ->
-                if (documentSnapshot != null && documentSnapshot.exists()) {
-                    // Lấy dữ liệu thành công
-                    val displayName = documentSnapshot.getString("displayName") ?: "Người dùng mới"
-                    val currentLevel = documentSnapshot.getString("currentLevel") ?: "Beginner"
-
-                    // Chuyển sang MainActivity và gửi kèm dữ liệu
-                    val intent = Intent(this, MainActivity::class.java)
-                    intent.putExtra("USER_DISPLAY_NAME", displayName)
-                    intent.putExtra("USER_CURRENT_LEVEL", currentLevel)
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    startActivity(intent)
-                    finish()
-
-                } else {
-                    // Lạ: Có tài khoản Auth nhưng không có dữ liệu trong Firestore
-                    Log.w(TAG, "User data not found in Firestore for UID: $uid")
-                    Toast.makeText(this, "Lỗi: Không tìm thấy dữ liệu người dùng.", Toast.LENGTH_LONG).show()
-                    binding.btnLogin.isEnabled = true
-                    firebaseAuth.signOut() // Đăng xuất để tránh lỗi
-                }
-            }
-            .addOnFailureListener { e ->
-                // Lỗi khi truy vấn Firestore
-                Log.w(TAG, "Error getting user document: ", e)
-                Toast.makeText(this, "Lỗi khi lấy dữ liệu người dùng.", Toast.LENGTH_LONG).show()
-                binding.btnLogin.isEnabled = true
-                firebaseAuth.signOut() // Đăng xuất để tránh lỗi
-            }
+    private fun navigateToMain() {
+        val intent = Intent(this, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
     }
 }

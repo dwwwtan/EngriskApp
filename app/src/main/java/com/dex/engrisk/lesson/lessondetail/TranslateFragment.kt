@@ -35,7 +35,6 @@ class TranslateFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         initFirebase()
         loadLesson()
         setupClickListeners()
@@ -77,7 +76,7 @@ class TranslateFragment : Fragment() {
                     val fetchedQuestions = document.get("questions") as? List<Map<String, String>>
                     if (!fetchedQuestions.isNullOrEmpty()) {
                         this.questions = fetchedQuestions
-                        displayCurrentQuestion() // Bắt đầu hiển thị câu hỏi đầu tiên
+                        displayCurrentQuestion()
                     } else {
                         Log.e(TAG, "Questions array is null or empty.")
                     }
@@ -118,7 +117,6 @@ class TranslateFragment : Fragment() {
             binding.btnCheck.visibility = View.VISIBLE
             binding.btnNext.visibility = View.GONE
         } else {
-            // Nếu không còn câu hỏi, kết thúc bài học.
             showCompletionDialog()
         }
     }
@@ -179,8 +177,7 @@ class TranslateFragment : Fragment() {
                 findNavController().popBackStack() // Quay lại màn hình trước đó
                 dialog.dismiss()
             }
-            .setCancelable(false)
-            .show()
+            .setCancelable(false).show()
     }
 
     // --- HÀM LƯU TIẾN ĐỘ ---

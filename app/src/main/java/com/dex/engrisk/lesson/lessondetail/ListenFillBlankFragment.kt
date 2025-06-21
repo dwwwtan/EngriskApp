@@ -7,6 +7,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.navigation.fragment.findNavController
@@ -16,7 +17,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.util.Locale
 
-// Thêm TextToSpeech.OnInitListener để lắng nghe khi TTS sẵn sàng
+// Implement interface này là bước đầu tiên để sử dụng TTS.
+// Nó yêu cầu chúng ta phải định nghĩa hàm onInit để biết khi nào TTS sẵn sàng.
 class ListenFillBlankFragment : Fragment(), TextToSpeech.OnInitListener {
 
     private val TAG = "ListenFillBlankFragment"
@@ -25,52 +27,77 @@ class ListenFillBlankFragment : Fragment(), TextToSpeech.OnInitListener {
     private lateinit var firebaseAuth: FirebaseAuth
     private lateinit var db: FirebaseFirestore
 
-    // Biến trạng thái game
+    // Biến trạng thái
     private var questions: List<Map<String, String>> = emptyList()
     private var currentQuestionIndex = 0
     private var score = 0
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentListenFillBlankBinding.inflate(inflater, container, false)
-        // Khởi tạo TTS
         tts = TextToSpeech(requireContext(), this)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        initFirebase()
+        loadLesson()
+        setupClickListeners()
+    }
 
+    // --- KHỞI TẠO FIREBASE ---
+    private fun initFirebase() {
         firebaseAuth = FirebaseAuth.getInstance()
         db = FirebaseFirestore.getInstance()
+    }
 
-        val lessonId = arguments?.getString("lessonId")
-        if (lessonId != null) {
+    // --- NẠP BÀI HỌC ---
+    private fun loadLesson() {
+        // --- LẤY ID BÀI HỌC TỪ THAM SỐ ---
+        val lessonId = arguments?.getString("lessonId") ?: ""
+
+        if (lessonId.isNotEmpty()) {
             fetchLessonDetails(lessonId)
         } else {
-            Log.e(TAG, "Lesson ID is null!")
-        }
-
-        binding.btnListen.setOnClickListener {
-            speakCurrentSentence()
-        }
-
-        binding.btnCheck.setOnClickListener {
-            handleCheckAnswer()
-        }
-
-        binding.btnNext.setOnClickListener {
-            handleNextQuestion()
+            Log.e(TAG, "Lesson ID is missing. Cannot fetch lesson details.")
+            Toast.makeText(requireContext(), "Lỗi: Không tìm thấy bài học.", Toast.LENGTH_SHORT).show()
         }
     }
 
+    private fun setupClickListeners() {
+        binding.btnSpeak.setOnClickListener { speakCurrentSentence() }
+        binding.btnCheck.setOnClickListener { handleCheckAnswer() }
+        binding.btnNext.setOnClickListener { handleNextQuestion() }
+    }
+
+    // --- HÀM CỦA OnInitListener ---
+    /**
+     * Hàm này sẽ được tự động gọi bởi hệ thống Android sau khi bộ máy TTS đã khởi tạo xong.
+     * @param status cho biết việc khởi tạo có thành công hay không.
+     */
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            val result = tts.setLanguage(Locale.US)
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Log.e(TAG, "The Language specified is not supported!")
+                binding.btnSpeak.isEnabled = false
+            } else {
+                binding.btnSpeak.isEnabled = true
+                Log.d(TAG, "TTS Initialized Successfully!")
+                // Phát âm câu đầu tiên nếu có
+                if (questions.isNotEmpty()) {
+                    speakCurrentSentence()
+                }
+            }
+        } else {
+            Log.e(TAG, "TTS Initialization Failed!")
+            binding.btnSpeak.isEnabled = false
+        }
+    }
+
+    // --- HÀM LẤY THÔNG TIN BÀI HỌC ---
     private fun fetchLessonDetails(lessonId: String) {
         binding.progressBar.visibility = View.VISIBLE
-        // ... code hàm này giữ nguyên như trước ...
-        val db = FirebaseFirestore.getInstance()
         db.collection("lessons").document(lessonId).get()
             .addOnSuccessListener { document ->
                 if (document != null && document.exists()) {
@@ -92,61 +119,49 @@ class ListenFillBlankFragment : Fragment(), TextToSpeech.OnInitListener {
             }
     }
 
-    // --- HÀM CỦA OnInitListener ---
-    override fun onInit(status: Int) {
-        if (status == TextToSpeech.SUCCESS) {
-            // Đặt ngôn ngữ là Tiếng Anh (Mỹ)
-            val result = tts.setLanguage(Locale.US)
-            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                Log.e(TAG, "The Language specified is not supported!")
-            }
-        } else {
-            Log.e(TAG, "TTS Initialization Failed!")
-        }
-    }
+
 
     private fun speakCurrentSentence() {
         if (currentQuestionIndex < questions.size) {
-            val sourceSentence = questions[currentQuestionIndex]["full_sentence"] ?: ""
-            // Phát âm câu
-            tts.speak(sourceSentence, TextToSpeech.QUEUE_FLUSH, null, "")
+            val question = questions[currentQuestionIndex]
+            val sentenceToSpeak  = question["full_sentence"] ?: ""
+            // Phát âm câu, QUEUE_FLUSH sẽ hủy các yêu cầu phát âm trước đó để đảm bảo chỉ có câu hiện tại được đọc.
+            tts.speak(sentenceToSpeak , TextToSpeech.QUEUE_FLUSH, null, "")
         }
     }
 
     private fun displayCurrentQuestion() {
         if (currentQuestionIndex < questions.size) {
-
+            val question = questions[currentQuestionIndex]
             // Lấy dữ liệu từ Map câu hỏi
-            val sourceSentence = questions[currentQuestionIndex]["full_sentence"] ?: ""
-            val blankWord = questions[currentQuestionIndex]["blank_word"] ?: ""
+            val fullSentence = question["full_sentence"] ?: ""
+            val blankWord = question["blank_word"] ?: ""
 
-            // --- ĐÂY LÀ DÒNG QUAN TRỌNG NHẤT ---
-            // Nó lấy câu đầy đủ, tìm từ cần điền (không phân biệt chữ hoa-thường)
-            // và thay thế nó bằng "______".
-            val sentenceWithBlank = sourceSentence.replace(blankWord, "______", ignoreCase = true)
+            // Hiển thị câu hỏi
+            val sentenceWithBlank = fullSentence.replace(blankWord, "______", ignoreCase = true)
+
             // Hiển thị câu đã được xử lý ra giao diện
             binding.tvSourceSentence.text = sentenceWithBlank
-
             binding.tvProgress.text = "Câu hỏi: ${currentQuestionIndex + 1}/${questions.size}"
             binding.etAnswer.text?.clear()
-            binding.etAnswer.isEnabled = true // Đảm bảo ô nhập được bật
+            binding.etAnswer.isEnabled = true
 
             // Reset trạng thái các nút và feedback
             binding.layoutFeedback.visibility = View.GONE
             binding.btnCheck.visibility = View.VISIBLE
             binding.btnNext.visibility = View.GONE
         } else {
-            // --- LOGIC MỚI: HOÀN THÀNH BÀI HỌC ---
             showCompletionDialog()
         }
     }
 
-    // --- HÀM MỚI: XỬ LÝ KHI NHẤN NÚT "KIỂM TRA" ---
+    // --- XỬ LÝ KHI NHẤN NÚT "KIỂM TRA" ---
     private fun handleCheckAnswer() {
         val userAnswer = binding.etAnswer.text.toString().trim()
-        val correctAnswer = questions[currentQuestionIndex]["blank_word"] ?: ""
+        val question = questions[currentQuestionIndex]
+        val correctAnswer = question["blank_word"] ?: ""
 
-        binding.etAnswer.isEnabled = false // Vô hiệu hóa ô nhập sau khi kiểm tra
+        binding.etAnswer.isEnabled = false
         binding.layoutFeedback.visibility = View.VISIBLE
 
         if (userAnswer.equals(correctAnswer, ignoreCase = true)) {
@@ -154,7 +169,7 @@ class ListenFillBlankFragment : Fragment(), TextToSpeech.OnInitListener {
             score++
             binding.tvFeedback.text = "Chính xác!"
             binding.tvFeedback.setTextColor(ContextCompat.getColor(requireContext(), R.color.correct_green))
-            binding.tvCorrectAnswer.visibility = View.GONE // Ẩn đáp án đúng vì đã trả lời đúng
+            binding.tvCorrectAnswer.visibility = View.GONE
         } else {
             // --- TRẢ LỜI SAI ---
             binding.tvFeedback.text = "Chưa chính xác!"
@@ -163,23 +178,21 @@ class ListenFillBlankFragment : Fragment(), TextToSpeech.OnInitListener {
             binding.tvCorrectAnswer.text = "Đáp án đúng: $correctAnswer"
         }
 
-        // Chuyển đổi nút
         binding.btnCheck.visibility = View.GONE
         binding.btnNext.visibility = View.VISIBLE
     }
 
-    // --- HÀM MỚI: XỬ LÝ KHI NHẤN NÚT "TIẾP TỤC" ---
+    // --- XỬ LÝ KHI NHẤN NÚT "TIẾP TỤC" ---
     private fun handleNextQuestion() {
         currentQuestionIndex++
-        displayCurrentQuestion() // Hiển thị câu hỏi tiếp theo hoặc màn hình kết quả
+        displayCurrentQuestion()
     }
 
-    // --- HÀM MỚI: HIỂN THỊ HỘP THOẠI KHI HOÀN THÀNH ---
+    // --- HIỂN THỊ HỘP THOẠI KHI HOÀN THÀNH ---
     private fun showCompletionDialog() {
-        // Lấy lessonId mà chúng ta đã nhận được lúc đầu
         val lessonId = arguments?.getString("lessonId") ?: ""
 
-        // --- BƯỚC MỚI: LƯU ĐIỂM VÀO FIRESTORE ---
+        // --- LƯU ĐIỂM VÀO FIRESTORE ---
         if (lessonId.isNotEmpty()) {
             saveLessonProgress(lessonId, score, questions.size)
         }
@@ -192,8 +205,7 @@ class ListenFillBlankFragment : Fragment(), TextToSpeech.OnInitListener {
                 findNavController().popBackStack()
                 dialog.dismiss()
             }
-            .setCancelable(false) // Không cho phép đóng dialog bằng cách nhấn ra ngoài
-            .show()
+            .setCancelable(false).show()
     }
 
     // --- HÀM LƯU TIẾN ĐỘ ---
@@ -207,8 +219,9 @@ class ListenFillBlankFragment : Fragment(), TextToSpeech.OnInitListener {
             "completedAt" to com.google.firebase.Timestamp.now()
         )
 
-        // Sử dụng "dot notation" để cập nhật một trường bên trong map 'lessonProgress'
-        // Ví dụ: lessonProgress.lesson_abc
+        // Kỹ thuật "dot notation" này rất hiệu quả để cập nhật một trường
+        // bên trong một đối tượng (map) trên Firestore mà không cần ghi đè cả đối tượng.
+        // ví dụ: lessonProgress.lesson_abc
         val fieldToUpdate = "lessonProgress.$lessonId"
 
         db.collection("userProgress").document(uid)
@@ -218,12 +231,10 @@ class ListenFillBlankFragment : Fragment(), TextToSpeech.OnInitListener {
             }
             .addOnFailureListener { e ->
                 Log.w(TAG, "Error saving lesson progress", e)
-                // Lưu ý: Kể cả khi lưu lỗi, ta vẫn không cần báo cho người dùng
-                // vì đây là một tác vụ nền, không ảnh hưởng đến trải nghiệm của họ.
             }
     }
 
-    // --- QUẢN LÝ VÒNG ĐỜI CỦA TTS (Rất quan trọng) ---
+    // --- QUẢN LÝ VÒNG ĐỜI CỦA TTS ---
     override fun onDestroy() {
         // Giải phóng tài nguyên TTS khi Fragment bị hủy để tránh memory leak
         if (::tts.isInitialized) {

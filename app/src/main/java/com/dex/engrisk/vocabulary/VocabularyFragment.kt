@@ -13,10 +13,7 @@ class VocabularyFragment : Fragment() {
 
     private lateinit var binding: FragmentVocabularyBinding
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentVocabularyBinding.inflate(inflater, container, false)
         return binding.root
     }

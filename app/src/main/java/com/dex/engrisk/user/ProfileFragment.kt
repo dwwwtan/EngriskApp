@@ -21,33 +21,26 @@ import com.google.firebase.firestore.FirebaseFirestore
 class ProfileFragment : Fragment() {
 
     private val TAG = "ProfileFragment"
-
     private lateinit var binding: FragmentProfileBinding
     private lateinit var firebaseAuth: FirebaseAuth
     private lateinit var db: FirebaseFirestore
-
     private val mainViewModel: MainViewModel by activityViewModels()
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentProfileBinding.inflate(inflater, container, false)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        initFirebase()
+        setupClickListeners()
+        observeUserData()
+    }
 
-        // Khởi tạo các đối tượng Firebase
+    private fun initFirebase() {
         firebaseAuth = FirebaseAuth.getInstance()
         db = FirebaseFirestore.getInstance()
-
-        // Gán các sự kiện click cho các nút
-        setupClickListeners()
-
-        // Lắng nghe và hiển thị dữ liệu người dùng
-        observeUserData()
     }
 
     private fun setupClickListeners() {
@@ -58,13 +51,8 @@ class ProfileFragment : Fragment() {
     }
 
     /**
-     * Hàm này có nhiệm vụ "lắng nghe" hoặc "quan sát" (observe) dữ liệu người dùng
-     * từ MainViewModel.
-     *
-     * Bất cứ khi nào dữ liệu người dùng trong ViewModel thay đổi (ví dụ: sau khi
-     * người dùng đăng nhập hoặc sau khi họ cập nhật tên), đoạn code bên trong khối
-     * lệnh này sẽ được tự động thực thi để cập nhật lại giao diện cho khớp với
-     * dữ liệu mới nhất.
+     * Hàm này có nhiệm vụ "lắng nghe" hoặc "quan sát" (observe) dữ liệu người dùng từ MainViewModel.
+     * giúp giao diện luôn hiển thị đúng thông tin user mới nhất mỗi khi dữ liệu user thay đổi trong ViewModel.
      */
     private fun observeUserData() {
         mainViewModel.user.observe(viewLifecycleOwner) { user ->
@@ -78,27 +66,6 @@ class ProfileFragment : Fragment() {
             }
         }
     }
-
-//    private fun observeUserData() {
-//        // mainViewModel.user là một đối tượng LiveData. Nó giống như một "kênh" truyền dữ liệu.
-//        // Lệnh .observe() là hành động đăng ký để "lắng nghe" các cập nhật từ kênh này.
-//        //
-//        // Tham số 'viewLifecycleOwner' là một phần rất quan trọng và thông minh của Android Jetpack.
-//        // Nó đảm bảo rằng việc lắng nghe này chỉ hoạt động khi giao diện của Fragment (View)
-//        // đang trong trạng thái an toàn (tức là đã được tạo ra và chưa bị hủy).
-//        // Nó cũng tự động hủy đăng ký lắng nghe khi Fragment bị phá hủy, giúp ứng dụng
-//        // không bị lỗi và tránh rò rỉ bộ nhớ (memory leak).
-//        mainViewModel.user.observe(viewLifecycleOwner) { user ->
-//            // 'user' ở đây chính là đối tượng User (model) mới nhất được gửi từ LiveData.
-//            // Đoạn code trong dấu ngoặc { ... } này sẽ được gọi mỗi khi có dữ liệu mới.
-//
-//            // Luôn kiểm tra để chắc chắn rằng đối tượng user nhận được không phải là null.
-//            if (user != null) {
-//                // Lấy email từ đối tượng user và gán nó vào TextView có id là tv_email.
-//                binding.tvEmail.text = user.email
-//            }
-//        }
-//    }
 
     //======================================================================
     // --- SECTION: THAY ĐỔI TÊN HIỂN THỊ ---
@@ -119,15 +86,14 @@ class ProfileFragment : Fragment() {
                     Toast.makeText(requireContext(), "Tên không được để trống", Toast.LENGTH_SHORT).show()
                 }
             }
-            .setNegativeButton("Hủy", null)
-            .show()
+            .setNegativeButton("Hủy", null).show()
     }
 
     private fun updateDisplayName(newName: String) {
         val uid = firebaseAuth.currentUser?.uid ?: return
+        showLoading(true)
 
-        db.collection("users").document(uid)
-            .update("displayName", newName)
+        db.collection("users").document(uid).update("displayName", newName)
             .addOnSuccessListener {
                 Toast.makeText(requireContext(), "Cập nhật tên thành công!", Toast.LENGTH_SHORT).show()
                 val currentUser = mainViewModel.user.value
@@ -139,6 +105,9 @@ class ProfileFragment : Fragment() {
             .addOnFailureListener { e ->
                 Toast.makeText(requireContext(), "Lỗi: ${e.message}", Toast.LENGTH_SHORT).show()
             }
+            .addOnCompleteListener {
+                showLoading(false)
+            }
     }
 
     //======================================================================
@@ -148,19 +117,17 @@ class ProfileFragment : Fragment() {
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_change_password, null)
         val etCurrentPass = dialogView.findViewById<TextInputEditText>(R.id.et_current_password)
         val etNewPass = dialogView.findViewById<TextInputEditText>(R.id.et_new_password)
-        val etConfirmNewPass = dialogView.findViewById<TextInputEditText>(R.id.et_confirm_new_password)
+        val etConfirmNewPass =
+            dialogView.findViewById<TextInputEditText>(R.id.et_confirm_new_password)
 
-        AlertDialog.Builder(requireContext())
-            .setTitle("Thay đổi mật khẩu")
-            .setView(dialogView)
+        AlertDialog.Builder(requireContext()).setTitle("Thay đổi mật khẩu").setView(dialogView)
             .setPositiveButton("Lưu") { _, _ ->
                 val currentPass = etCurrentPass.text.toString()
                 val newPass = etNewPass.text.toString()
                 val confirmPass = etConfirmNewPass.text.toString()
                 changePassword(currentPass, newPass, confirmPass)
             }
-            .setNegativeButton("Hủy", null)
-            .show()
+            .setNegativeButton("Hủy", null).show()
     }
 
     private fun changePassword(currentPass: String, newPass: String, confirmPass: String) {
@@ -178,21 +145,28 @@ class ProfileFragment : Fragment() {
         }
 
         val user = firebaseAuth.currentUser ?: return
-        val credential = EmailAuthProvider.getCredential(user.email!!, currentPass)
+        showLoading(true)
 
+        // Đây là bước xác thực lại danh tính người dùng.
+        // Firebase yêu cầu điều này cho các hành động nhạy cảm để đảm bảo an toàn.
+        val credential = EmailAuthProvider.getCredential(user.email!!, currentPass)
         user.reauthenticate(credential)
             .addOnSuccessListener {
                 Log.d(TAG, "User re-authenticated successfully.")
+                // Sau khi xác thực lại thành công, tiến hành đổi mật khẩu.
                 user.updatePassword(newPass)
-                    .addOnSuccessListener {
-                        Toast.makeText(requireContext(), "Đổi mật khẩu thành công!", Toast.LENGTH_SHORT).show()
-                    }
-                    .addOnFailureListener { e ->
-                        Toast.makeText(requireContext(), "Lỗi khi cập nhật mật khẩu: ${e.message}", Toast.LENGTH_LONG).show()
+                    .addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            Toast.makeText(requireContext(), "Đổi mật khẩu thành công!", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(requireContext(), "Lỗi khi cập nhật mật khẩu: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                        }
+                        showLoading(false)
                     }
             }
             .addOnFailureListener {
                 Toast.makeText(requireContext(), "Mật khẩu hiện tại không đúng.", Toast.LENGTH_LONG).show()
+                showLoading(false)
             }
     }
 
@@ -215,42 +189,43 @@ class ProfileFragment : Fragment() {
                     Toast.makeText(requireContext(), "Vui lòng nhập mật khẩu", Toast.LENGTH_SHORT).show()
                 }
             }
-            .setNegativeButton("Hủy", null)
-            .show()
+            .setNegativeButton("Hủy", null).show()
     }
 
     private fun deleteUserAccount(password: String) {
         val user = firebaseAuth.currentUser ?: return
-        val credential = EmailAuthProvider.getCredential(user.email!!, password)
+        showLoading(true)
 
         // BƯỚC A: XÁC THỰC LẠI
-        user.reauthenticate(credential).addOnSuccessListener {
-            Log.d(TAG, "User re-authenticated for deletion.")
-
-            // BƯỚC B: XÓA DỮ LIỆU FIRESTORE
-            db.collection("users").document(user.uid).delete()
-                .addOnSuccessListener {
-                    Log.d(TAG, "Firestore user data deleted.")
-
-                    // BƯỚC C: XÓA TÀI KHOẢN AUTHENTICATION
-                    user.delete().addOnSuccessListener {
-                        Log.d(TAG, "User account deleted from Authentication.")
-                        Toast.makeText(requireContext(), "Tài khoản đã được xóa vĩnh viễn.", Toast.LENGTH_LONG).show()
-
-                        // Quay về màn hình Login
-                        val intent = Intent(requireActivity(), LoginActivity::class.java)
-                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                        startActivity(intent)
-                        requireActivity().finish()
-                    }.addOnFailureListener { e ->
-                        Toast.makeText(requireContext(), "Lỗi khi xóa tài khoản: ${e.message}", Toast.LENGTH_LONG).show()
-                    }
-                }.addOnFailureListener { e ->
-                    Toast.makeText(requireContext(), "Lỗi khi xóa dữ liệu: ${e.message}", Toast.LENGTH_LONG).show()
+        user.reauthenticate(EmailAuthProvider.getCredential(user.email!!, password))
+            .addOnCompleteListener { reauthTask ->
+                if (reauthTask.isSuccessful) {
+                    Log.d(TAG, "User re-authenticated for deletion.")
+                    // BƯỚC B: XÓA DỮ LIỆU FIRESTORE
+                    db.collection("users").document(user.uid).delete()
+                        .addOnCompleteListener { firestoreTask ->
+                            if (firestoreTask.isSuccessful) {
+                                Log.d(TAG, "Firestore user data deleted.")
+                                // BƯỚC C: XÓA TÀI KHOẢN AUTH
+                                user.delete().addOnCompleteListener { authDeleteTask ->
+                                    showLoading(false) // Ẩn loading
+                                    if (authDeleteTask.isSuccessful) {
+                                        Toast.makeText(requireContext(), "Tài khoản đã được xóa.", Toast.LENGTH_LONG).show()
+                                        navigateToLogin()
+                                    } else {
+                                        Toast.makeText(requireContext(), "Lỗi khi xóa tài khoản: ${authDeleteTask.exception?.message}", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            } else {
+                                showLoading(false)
+                                Toast.makeText(requireContext(), "Lỗi khi xóa dữ liệu: ${firestoreTask.exception?.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                } else {
+                    showLoading(false)
+                    Toast.makeText(requireContext(), "Mật khẩu không đúng.", Toast.LENGTH_LONG).show()
                 }
-        }.addOnFailureListener {
-            Toast.makeText(requireContext(), "Mật khẩu không đúng.", Toast.LENGTH_LONG).show()
-        }
+            }
     }
 
     //======================================================================
@@ -263,12 +238,23 @@ class ProfileFragment : Fragment() {
             .setPositiveButton("Đăng xuất") { _, _ ->
                 firebaseAuth.signOut()
                 Toast.makeText(requireContext(), "Đăng xuất thành công", Toast.LENGTH_SHORT).show()
-                val intent = Intent(requireActivity(), LoginActivity::class.java)
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                startActivity(intent)
-                requireActivity().finish()
+                navigateToLogin()
             }
-            .setNegativeButton("Hủy", null)
-            .show()
+            .setNegativeButton("Hủy", null).show()
+    }
+
+    private fun showLoading(isLoading: Boolean) {
+        binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+        binding.btnEditName.isEnabled = !isLoading
+        binding.btnChangePassword.isEnabled = !isLoading
+        binding.btnDeleteAccount.isEnabled = !isLoading
+        binding.btnLogout.isEnabled = !isLoading
+    }
+
+    private fun navigateToLogin() {
+        val intent = Intent(requireActivity(), LoginActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        requireActivity().finish()
     }
 }

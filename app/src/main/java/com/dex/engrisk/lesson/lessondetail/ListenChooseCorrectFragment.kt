@@ -41,38 +41,62 @@ class ListenChooseCorrectFragment : Fragment(), TextToSpeech.OnInitListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        initFirebase()
         optionButtons = listOf(binding.btnOption1, binding.btnOption2, binding.btnOption3, binding.btnOption4)
+        setupClickListeners()
+        loadLesson()
+    }
 
+    private fun initFirebase() {
         firebaseAuth = FirebaseAuth.getInstance()
         db = FirebaseFirestore.getInstance()
+    }
 
-        // Logic fetch data, gán sự kiện click tương tự các fragment game khác
-        // Bạn hãy copy và chỉnh sửa các hàm fetchLessonDetails, showCompletionDialog, saveLessonProgress
-
-        binding.btnListen.setOnClickListener { speakCurrentSentence() }
-        binding.btnNext.setOnClickListener { handleNextQuestion() }
-
+    private fun loadLesson() {
         val lessonId = arguments?.getString("lessonId")
-        if (lessonId != null) {
+        if (!lessonId.isNullOrEmpty()) {
             fetchLessonDetails(lessonId)
         } else {
-            Log.e(TAG, "Lesson ID is null!")
+            Log.e(TAG, "Lesson ID is null or empty!")
         }
     }
 
+    private fun setupClickListeners() {
+        binding.btnSpeak.setOnClickListener { speakCurrentSentence() }
+        binding.btnNext.setOnClickListener { handleNextQuestion() }
+    }
+
+    // --- HÀM CỦA OnInitListener ---
+    /**
+     * Hàm này sẽ được tự động gọi bởi hệ thống Android sau khi bộ máy TTS đã khởi tạo xong.
+     * @param status cho biết việc khởi tạo có thành công hay không.
+     */
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            val result = tts.setLanguage(Locale.US)
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Log.e(TAG, "The Language specified is not supported!")
+                binding.btnSpeak.isEnabled = false
+            } else {
+                binding.btnSpeak.isEnabled = true
+            }
+        } else {
+            Log.e(TAG, "TTS Initialization Failed!")
+        }
+    }
+
+    // --- HÀM LẤY THÔNG TIN BÀI HỌC ---
     private fun fetchLessonDetails(lessonId: String) {
         binding.progressBar.visibility = View.VISIBLE
-        // ... code hàm này giữ nguyên như trước ...
-        val db = FirebaseFirestore.getInstance()
         db.collection("lessons").document(lessonId).get()
             .addOnSuccessListener { document ->
                 if (document != null && document.exists()) {
-                    val fetchedQuestions = document.get("questions") as? List<Map<String, String>>
+                    val fetchedQuestions = document.get("questions") as? List<Map<String, Any>>
                     if (!fetchedQuestions.isNullOrEmpty()) {
                         this.questions = fetchedQuestions
                         displayCurrentQuestion()
                     } else {
-                        Log.e(TAG, "Questions array is null or empty.")
+                        Log.e(TAG, "Questions array is null or not in the correct format.")
                     }
                 } else {
                     Log.e(TAG, "No such document with ID: $lessonId")
@@ -85,23 +109,13 @@ class ListenChooseCorrectFragment : Fragment(), TextToSpeech.OnInitListener {
             }
     }
 
-    override fun onInit(status: Int) {
-        if (status == TextToSpeech.SUCCESS) {
-            val result = tts.setLanguage(Locale.US)
-            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                Log.e(TAG, "The Language specified is not supported!")
-            }
-        } else {
-            Log.e(TAG, "TTS Initialization Failed!")
-        }
-    }
-
     private fun displayCurrentQuestion() {
         if (currentQuestionIndex < questions.size) {
             val question = questions[currentQuestionIndex]
             val correctAnswer = question["correct_answer"] as? String ?: ""
             val options = question["options"] as? List<String> ?: listOf()
 
+            // Xáo trộn các lựa chọn để vị trí đáp án đúng luôn ngẫu nhiên
             val allChoices = (options + correctAnswer).shuffled()
 
             // Gán các lựa chọn và SỰ KIỆN CLICK lên các nút
@@ -109,59 +123,44 @@ class ListenChooseCorrectFragment : Fragment(), TextToSpeech.OnInitListener {
                 if (index < allChoices.size) {
                     button.visibility = View.VISIBLE
                     button.text = allChoices[index]
-
-                    // Reset lại trạng thái của nút
                     button.isEnabled = true
-                    button.strokeColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.default_stroke_color))
 
+                    // Reset màu của nút về trạng thái mặc định
+                    button.strokeColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.default_stroke_color))
                     // QUAN TRỌNG: Gán sự kiện click cho từng nút lựa chọn ở đây
                     button.setOnClickListener {
-                        // Khi người dùng nhấn vào nút này, ta gọi hàm handleAnswer
-                        // và truyền vào chính cái nút đã được nhấn.
-                        handleAnswer(it as MaterialButton, correctAnswer)
+                        // Khi người dùng nhấn vào nút này, ta gọi hàm handleAnswer và truyền vào chính cái nút đã được nhấn.
+                        handleAnswer(button, correctAnswer)
                     }
                 } else {
                     button.visibility = View.GONE
                 }
             }
-
-            // Reset các view khác
-            binding.layoutFeedback.visibility = View.GONE
-            binding.btnCheck.visibility = View.VISIBLE
             binding.btnNext.visibility = View.GONE
-            // ...
+            binding.tvProgress.text = "Câu hỏi: ${currentQuestionIndex + 1}/${questions.size}"
         } else {
              showCompletionDialog()
         }
     }
 
-    /**
-     * Hàm này được gọi ngay khi người dùng nhấn vào MỘT trong bốn nút đáp án.
-     * @param clickedButton Chính là cái nút mà người dùng đã nhấn.
-     * @param correctAnswer Đáp án đúng của câu hỏi hiện tại.
-     */
+    // --- HÀM XỬ LÝ KHI NGƯỜI DÙNG NHẤN VÀO MỘT NÚT TRẢ LỜI ---
     private fun handleAnswer(clickedButton: MaterialButton, correctAnswer: String) {
-        // 1. Vô hiệu hóa tất cả các nút để người dùng không chọn lại được nữa.
         optionButtons.forEach { it.isEnabled = false }
 
-        // 2. Kiểm tra xem text trên nút được nhấn có trùng với đáp án đúng không.
         val isCorrect = clickedButton.text.toString() == correctAnswer
-
         if (isCorrect) {
             score++
-            // Phản hồi cho người dùng biết họ đã chọn đúng (ví dụ: đổi màu nút thành xanh)
-             clickedButton.strokeColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.correct_green))
+            // Đánh dấu nút đúng màu xanh
+            clickedButton.strokeColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.correct_green))
         } else {
-            // Phản hồi cho người dùng biết họ đã chọn sai (ví dụ: đổi màu nút thành đỏ)
-             clickedButton.strokeColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.incorrect_red))
-            // Đồng thời, tìm và làm nổi bật đáp án đúng
+            // Đánh dấu nút sai màu đỏ
+            clickedButton.strokeColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.incorrect_red))
+            // Tìm và đánh dấu nút đúng màu xanh để người dùng biết
             optionButtons.find { it.text.toString() == correctAnswer }?.apply {
                 // set stroke color to green
                 strokeColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.correct_green))
             }
         }
-
-        // 3. Hiển thị nút "Tiếp tục" để người dùng qua câu mới.
         binding.btnNext.visibility = View.VISIBLE
     }
 
@@ -177,12 +176,11 @@ class ListenChooseCorrectFragment : Fragment(), TextToSpeech.OnInitListener {
         }
     }
 
-    // --- HÀM MỚI: HIỂN THỊ HỘP THOẠI KHI HOÀN THÀNH ---
+    // --- HIỂN THỊ HỘP THOẠI KHI HOÀN THÀNH ---
     private fun showCompletionDialog() {
-        // Lấy lessonId mà chúng ta đã nhận được lúc đầu
         val lessonId = arguments?.getString("lessonId") ?: ""
 
-        // --- BƯỚC MỚI: LƯU ĐIỂM VÀO FIRESTORE ---
+        // --- LƯU ĐIỂM VÀO FIRESTORE ---
         if (lessonId.isNotEmpty()) {
             saveLessonProgress(lessonId, score, questions.size)
         }
@@ -195,14 +193,12 @@ class ListenChooseCorrectFragment : Fragment(), TextToSpeech.OnInitListener {
                 findNavController().popBackStack()
                 dialog.dismiss()
             }
-            .setCancelable(false) // Không cho phép đóng dialog bằng cách nhấn ra ngoài
-            .show()
+            .setCancelable(false).show()
     }
 
     // --- HÀM LƯU TIẾN ĐỘ ---
     private fun saveLessonProgress(lessonId: String, userScore: Int, totalQuestions: Int) {
         val uid = firebaseAuth.currentUser?.uid ?: return
-
         // Tạo một đối tượng Map để chứa thông tin về lần làm bài này
         val progressData = mapOf(
             "score" to userScore,
@@ -216,14 +212,8 @@ class ListenChooseCorrectFragment : Fragment(), TextToSpeech.OnInitListener {
 
         db.collection("userProgress").document(uid)
             .update(fieldToUpdate, progressData)
-            .addOnSuccessListener {
-                Log.d(TAG, "Lesson progress saved successfully for lesson: $lessonId")
-            }
-            .addOnFailureListener { e ->
-                Log.w(TAG, "Error saving lesson progress", e)
-                // Lưu ý: Kể cả khi lưu lỗi, ta vẫn không cần báo cho người dùng
-                // vì đây là một tác vụ nền, không ảnh hưởng đến trải nghiệm của họ.
-            }
+            .addOnSuccessListener { Log.d(TAG, "Lesson progress saved successfully for lesson: $lessonId") }
+            .addOnFailureListener { e -> Log.w(TAG, "Error saving lesson progress", e) }
     }
 
     override fun onDestroy() {

@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.util.Patterns
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
@@ -13,30 +14,27 @@ import com.dex.engrisk.databinding.ActivityRegisterBinding
 class RegisterActivity : AppCompatActivity() {
 
     private val TAG = "RegisterActivity"
-
-    /**
-     * lateinit cho phép chúng ta khởi tạo chúng trong onCreate thay vì ngay lúc khai báo.
-     */
     private lateinit var binding: ActivityRegisterBinding
     private lateinit var firebaseAuth: FirebaseAuth
     private lateinit var db: FirebaseFirestore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Gắn layout vào Activity bằng ViewBinding
         binding = ActivityRegisterBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Khởi tạo các đối tượng Firebase
+        initFirebase()
+        setupClickListeners()
+    }
+
+    // Khởi tạo Firebase
+    private fun initFirebase() {
         firebaseAuth = FirebaseAuth.getInstance()
         db = FirebaseFirestore.getInstance()
+    }
 
-        // Thiết lập sự kiện click cho nút "Đăng ký"
-        binding.btnRegister.setOnClickListener {
-            validateInputAndRegister()
-        }
-
-        // Back to Login Activity
+    private fun setupClickListeners() {
+        binding.btnRegister.setOnClickListener { validateInputAndRegister() }
         binding.tvLoginPrompt.setOnClickListener {
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
@@ -49,12 +47,11 @@ class RegisterActivity : AppCompatActivity() {
     private fun validateInputAndRegister() {
         val email = binding.etEmail.text.toString().trim()
         val password = binding.etPassword.text.toString().trim()
+        val confirmPassword = binding.etConfirmPassword.text.toString().trim()
 
-        // Sử dụng một hàm riêng để kiểm tra, nếu hợp lệ thì mới tiếp tục
-        if (isInputValid(email, password)) {
-            // Vô hiệu hóa nút để tránh người dùng nhấn nhiều lần
+        if (isInputValid(email, password, confirmPassword)) {
+            binding.progressBar.visibility = View.VISIBLE
             binding.btnRegister.isEnabled = false
-            // Bắt đầu quá trình đăng ký với Firebase
             registerUser(email, password)
         }
     }
@@ -63,7 +60,7 @@ class RegisterActivity : AppCompatActivity() {
      * Kiểm tra tất cả các điều kiện của email và mật khẩu.
      * @return Trả về true nếu tất cả dữ liệu hợp lệ, ngược lại trả về false.
      */
-    private fun isInputValid(email: String, password: String): Boolean {
+    private fun isInputValid(email: String, password: String, confirmPassword: String): Boolean {
         if (email.isEmpty()) {
             binding.etEmail.error = "Vui lòng nhập email"
             binding.etEmail.requestFocus()
@@ -82,6 +79,11 @@ class RegisterActivity : AppCompatActivity() {
         if (password.length < 6) {
             binding.etPassword.error = "Mật khẩu phải có ít nhất 6 ký tự"
             binding.etPassword.requestFocus()
+            return false
+        }
+        if (password != confirmPassword) {
+            binding.etConfirmPassword.error = "Mật khẩu xác nhận không khớp"
+            binding.etConfirmPassword.requestFocus()
             return false
         }
         return true
@@ -103,7 +105,7 @@ class RegisterActivity : AppCompatActivity() {
                 // Đăng ký Authentication thất bại
                 Log.w(TAG, "createUserWithEmail:failure", e)
                 Toast.makeText(this, "Đăng ký thất bại: ${e.message}", Toast.LENGTH_LONG).show()
-                // Bật lại nút đăng ký để người dùng thử lại
+                binding.progressBar.visibility = View.GONE
                 binding.btnRegister.isEnabled = true
             }
     }
@@ -116,11 +118,11 @@ class RegisterActivity : AppCompatActivity() {
         val userData = hashMapOf(
             "uid" to uid,
             "email" to email,
-            "displayName" to "", // Để trống, cho người dùng cập nhật sau
-            "image" to "",
-            "role" to "user", // Mặc định là user
-            "registrationDate" to com.google.firebase.Timestamp.now(), // Lưu thời gian đăng ký
-            "currentLevel" to "Beginner" // Mặc định level ban đầu
+            "displayName" to "",
+            "imageUrl" to "",
+            "role" to "user",
+            "registrationDate" to com.google.firebase.Timestamp.now(),
+            "currentLevel" to "Beginner"
         )
 
         db.collection("users").document(uid)
@@ -129,7 +131,7 @@ class RegisterActivity : AppCompatActivity() {
                 // Lưu hồ sơ vào Firestore thành công
                 Log.d(TAG, "Hồ sơ người dùng đã được tạo trong Firestore cho UID: $uid")
                 Toast.makeText(this, "Đăng ký và tạo hồ sơ thành công!", Toast.LENGTH_SHORT).show()
-
+                binding.progressBar.visibility = View.GONE
                 // Chuyển hướng đến màn hình đăng nhập
                 val intent = Intent(this, LoginActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -137,10 +139,9 @@ class RegisterActivity : AppCompatActivity() {
                 finish()
             }
             .addOnFailureListener { e ->
-                // Lưu hồ sơ vào Firestore thất bại
                 Log.w(TAG, "Lỗi khi tạo hồ sơ người dùng", e)
                 Toast.makeText(this, "Lỗi khi lưu dữ liệu hồ sơ: ${e.message}", Toast.LENGTH_LONG).show()
-                // Bật lại nút đăng ký
+                binding.progressBar.visibility = View.GONE
                 binding.btnRegister.isEnabled = true
             }
     }
