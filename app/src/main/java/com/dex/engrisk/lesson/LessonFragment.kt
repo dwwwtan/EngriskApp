@@ -11,21 +11,9 @@ import com.dex.engrisk.R
 import com.dex.engrisk.databinding.FragmentLessonBinding
 
 class LessonFragment : Fragment() {
-
-    companion object {
-        //
-    }
-
-    // BƯỚC 1: Khởi tạo binding cho Fragment
     private lateinit var binding: FragmentLessonBinding
 
-    // BƯỚC 2: Khởi tạo giao diện cho Fragment
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        // BƯỚC 3: Gán binding cho Fragment
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentLessonBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -33,7 +21,10 @@ class LessonFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // setOnClickListener cho các nút trong LessonFragment
+        setupClickListener()
+    }
+
+    private fun setupClickListener() {
         binding.btnBeginnerStart.setOnClickListener {
             val bundle = bundleOf("levelName" to "Beginner")
             findNavController().navigate(R.id.action_to_lessonListFragment, bundle)

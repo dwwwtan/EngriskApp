@@ -7,4 +7,5 @@
     <color name="disabled_background">#FFBDBDBD</color>
     <color name="pressed_background">#FF9E9E9E</color>
     <color name="default_background">#FFF5F5F5</color>
+    <color name="default_stroke_color">#FFBDBDBD</color>
 </resources>

@@ -112,8 +112,7 @@ class ListenChooseCorrectFragment : Fragment(), TextToSpeech.OnInitListener {
 
                     // Reset lại trạng thái của nút
                     button.isEnabled = true
-                    // TODO: Reset lại màu sắc của nút nếu bạn có custom
-
+                    button.strokeColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.default_stroke_color))
 
                     // QUAN TRỌNG: Gán sự kiện click cho từng nút lựa chọn ở đây
                     button.setOnClickListener {
@@ -228,6 +227,7 @@ class ListenChooseCorrectFragment : Fragment(), TextToSpeech.OnInitListener {
     }
 
     override fun onDestroy() {
+        // Giải phóng tài nguyên TTS khi Fragment bị hủy để tránh memory leak
         if (::tts.isInitialized) {
             tts.stop()
             tts.shutdown()
