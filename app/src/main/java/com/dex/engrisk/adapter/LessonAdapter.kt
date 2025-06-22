@@ -1,26 +1,23 @@
 package com.dex.engrisk.adapter
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.dex.engrisk.databinding.LessonItemBinding
+import com.dex.engrisk.databinding.ItemLessonBinding
 import com.dex.engrisk.model.Lesson
 
-// BƯỚC 1: Sửa đổi constructor để nhận vào một hàm (lambda)
-// Hàm này không có giá trị trả về (Unit) và nhận vào một đối tượng Lesson
 class LessonAdapter(
     private var lessons: List<Lesson>,
     private val onItemClicked: (Lesson) -> Unit
-) :
-    RecyclerView.Adapter<LessonAdapter.LessonViewHolder>() {
+) : RecyclerView.Adapter<LessonAdapter.LessonViewHolder>() {
 
     // Lớp ViewHolder chứa tham chiếu đến các view trong một item
-    inner class LessonViewHolder(val binding: LessonItemBinding) :
-        RecyclerView.ViewHolder(binding.root)
+    inner class LessonViewHolder(val binding: ItemLessonBinding) : RecyclerView.ViewHolder(binding.root)
 
     // Tạo ViewHolder mới
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): LessonViewHolder {
-        val binding = LessonItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        val binding = ItemLessonBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return LessonViewHolder(binding)
     }
 
@@ -38,11 +35,10 @@ class LessonAdapter(
     }
 
     // Trả về số lượng item trong danh sách
-    override fun getItemCount(): Int {
-        return lessons.size
-    }
+    override fun getItemCount(): Int = lessons.size
 
     // Hàm để cập nhật danh sách và thông báo cho RecyclerView vẽ lại
+    @SuppressLint("NotifyDataSetChanged")
     fun updateLessons(newLessons: List<Lesson>) {
         lessons = newLessons
         notifyDataSetChanged()

@@ -34,7 +34,18 @@
         android:id="@+id/nav_progress"
         android:name="com.dex.engrisk.progress.ProgressFragment"
         android:label="Tiến độ"
-        tools:layout="@layout/fragment_progress" />
+        tools:layout="@layout/fragment_progress" >
+
+        <action
+            android:id="@+id/action_progressFragment_to_translateFragment"
+            app:destination="@id/translateFragment" />
+        <action
+            android:id="@+id/action_progressFragment_to_listenFillBlankFragment"
+            app:destination="@id/listenFillBlankFragment" />
+        <action
+            android:id="@+id/action_progressFragment_to_listenChooseCorrectFragment"
+            app:destination="@id/listenChooseCorrectFragment" />
+    </fragment>
 
     <!-- Profile Fragment -->
     <fragment
@@ -101,6 +112,13 @@
         android:id="@+id/flashcardFragment"
         android:name="com.dex.engrisk.vocabulary.flashcard.FlashcardFragment"
         android:label="Học Flashcard"
-        tools:layout="@layout/fragment_flashcard" />
+        tools:layout="@layout/fragment_flashcard" >
+
+        <argument
+            android:name="topicName"
+            app:argType="string"
+            app:nullable="true"
+            android:defaultValue="@null" />
+    </fragment>
 
 </navigation>

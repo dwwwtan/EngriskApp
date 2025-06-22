@@ -10,5 +10,6 @@ data class Vocabulary(
     val pronunciation: String = "",
     val definition: String = "",
     val example: String = "",
-    val imageUrl: String = ""
+    val imageUrl: String = "",
+    val topic: String = ""
 )

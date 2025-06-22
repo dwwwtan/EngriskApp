@@ -10,14 +10,14 @@ import java.util.Locale
 
 // Sửa constructor để nhận vào danh sách đối tượng mới
 class CompletedLessonAdapter(
-    private var completedLessons: List<CompletedLesson>) : RecyclerView.Adapter<CompletedLessonAdapter.ViewHolder>() {
+    private var completedLessons: List<CompletedLesson>,
+    private val onItemClicked: (CompletedLesson) -> Unit
+) : RecyclerView.Adapter<CompletedLessonAdapter.ViewHolder>() {
 
-    inner class ViewHolder(val binding: ItemCompletedLessonBinding) :
-        RecyclerView.ViewHolder(binding.root)
+    inner class ViewHolder(val binding: ItemCompletedLessonBinding) : RecyclerView.ViewHolder(binding.root)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val binding =
-            ItemCompletedLessonBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        val binding = ItemCompletedLessonBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return ViewHolder(binding)
     }
 
@@ -31,8 +31,12 @@ class CompletedLessonAdapter(
         val progress = completedLesson.progressDetails
         holder.binding.tvScore.text = "${progress.score}/${progress.totalQuestions}"
         val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-        holder.binding.tvCompletedDate.text =
-            "Hoàn thành: ${sdf.format(progress.completedAt.toDate())}"
+        holder.binding.tvCompletedDate.text = "Hoàn thành: ${sdf.format(progress.completedAt.toDate())}"
+
+        holder.itemView.setOnClickListener {
+            // Khi được nhấn, gọi hàm callback và truyền vào đối tượng của item đó
+            onItemClicked(completedLesson)
+        }
     }
 
     override fun getItemCount(): Int = completedLessons.size

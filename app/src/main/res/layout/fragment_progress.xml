@@ -50,6 +50,7 @@
     </com.google.android.material.card.MaterialCardView>
 
     <TextView
+        android:id="@+id/tv_history_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Lịch sử học tập"
@@ -62,6 +63,7 @@
         android:id="@+id/rv_completed_lessons"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         tools:listitem="@layout/item_completed_lesson" />
 
     <ProgressBar

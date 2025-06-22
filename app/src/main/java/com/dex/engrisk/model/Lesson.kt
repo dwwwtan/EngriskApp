@@ -8,7 +8,8 @@ data class Lesson(
     val title: String = "",
     val level: String = "",
     val type: String = "",
-    val order: Int = 0 // Trường này có thể dùng để sắp xếp các bài học
+    val order: Int = 0, // Trường này có thể dùng để sắp xếp các bài học
+    var questions: List<Map<String, Any>> = emptyList()
 
     // Bạn có thể thêm các trường khác như 'order' nếu cần
 )

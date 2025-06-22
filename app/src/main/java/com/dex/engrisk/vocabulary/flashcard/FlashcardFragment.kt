@@ -1,164 +1,234 @@
 package com.dex.engrisk.vocabulary.flashcard
 
+import android.animation.Animator
 import android.animation.AnimatorInflater
-import android.animation.AnimatorSet
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import com.dex.engrisk.R
 import com.bumptech.glide.Glide
 import com.dex.engrisk.databinding.FragmentFlashcardBinding
 import com.dex.engrisk.model.Vocabulary
+import com.google.firebase.Timestamp
+import com.dex.engrisk.model.VocabularyProgress
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 
 class FlashcardFragment : Fragment() {
 
     private val TAG = "FlashcardFragment"
     private lateinit var binding: FragmentFlashcardBinding
+    private lateinit var db: FirebaseFirestore
+    private lateinit var firebaseAuth: FirebaseAuth
+    private lateinit var frontAnim: Animator
+    private lateinit var backAnim: Animator
 
     // --- BIẾN TRẠNG THÁI ---
     private var vocabularyList: List<Vocabulary> = emptyList()
     private var currentCardIndex = 0
-    private var isFrontVisible = true // Biến để theo dõi mặt thẻ đang hiển thị
+    private var isFrontVisible = true
 
-    // --- BIẾN CHO HIỆU ỨNG LẬT ---
-    private lateinit var frontAnim: AnimatorSet
-    private lateinit var backAnim: AnimatorSet
+    // --- BIẾN LOGIC VUỐT ---
+    private var x1: Float = 0f
+    private var x2: Float = 0f
+    private val MIN_SWIPE_DISTANCE = 150 // Ngưỡng vuốt, có thể điều chỉnh
 
-
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentFlashcardBinding.inflate(inflater, container, false)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        // Tải dữ liệu từ Firestore
-        fetchVocabulary()
-
-        // Chuẩn bị các hiệu ứng
+        initFirebase()
         setupAnimations()
-
-        // Gán sự kiện cho việc lật thẻ và các nút bấm
+        fetchVocabulary()
         setupClickListeners()
     }
 
-    private fun fetchVocabulary() {
-        // ... code hàm này giữ nguyên ...
-        binding.progressBar.visibility = View.VISIBLE
-
-        FirebaseFirestore.getInstance().collection("vocabulary")
-            .get()
-            .addOnSuccessListener { querySnapshot ->
-                if (!querySnapshot.isEmpty) {
-                    vocabularyList = querySnapshot.toObjects(Vocabulary::class.java)
-                    displayCurrentCard()
-                } else {
-                    Log.d(TAG, "No vocabulary documents found.")
-                }
-                binding.progressBar.visibility = View.GONE
-            }
-            .addOnFailureListener { exception ->
-                Log.e(TAG, "Error fetching vocabulary", exception)
-                binding.progressBar.visibility = View.GONE
-            }
+    private fun initFirebase() {
+        db = FirebaseFirestore.getInstance()
+        firebaseAuth = FirebaseAuth.getInstance()
     }
-
-    private fun displayCurrentCard() {
-        if (vocabularyList.isNotEmpty() && currentCardIndex in vocabularyList.indices) {
-            val vocabulary = vocabularyList[currentCardIndex]
-
-            binding.tvWord.text = vocabulary.word
-            binding.tvPronunciation.text = vocabulary.pronunciation
-            binding.tvDefinition.text = vocabulary.definition
-            binding.tvWordTypeBack.text = vocabulary.type
-            binding.tvExample.text = "Example: ${vocabulary.example}"
-
-            Glide.with(this)
-                .load(vocabulary.imageUrl)
-                .into(binding.ivWordImage)
-
-            // Reset về mặt trước mỗi khi chuyển thẻ
-            resetCard()
-        }
-    }
-
-    // --- CÁC HÀM LOGIC MỚI ---
 
     private fun setupAnimations() {
         val scale = requireContext().resources.displayMetrics.density
         binding.cardFront.cameraDistance = 8000 * scale
         binding.cardBack.cameraDistance = 8000 * scale
-
-        // Tải hiệu ứng từ animator resource (chúng ta sẽ tạo ở bước sau)
-        // Nhưng để đơn giản, ta sẽ tạo bằng code
-        // Tạm thời để trống, sẽ thêm logic lật thẻ ở hàm setupClickListeners
+        frontAnim = AnimatorInflater.loadAnimator(requireContext(), R.animator.flip_out)
+        backAnim = AnimatorInflater.loadAnimator(requireContext(), R.animator.flip_in)
     }
 
-    private fun setupClickListeners() {
-        // Sự kiện lật thẻ khi nhấn vào
-        val flipClickListener = View.OnClickListener {
-            flipCard()
+    private fun fetchVocabulary() {
+        binding.progressBar.visibility = View.VISIBLE
+        val topicName = arguments?.getString("topicName")
+        var query: Query = FirebaseFirestore.getInstance().collection("vocabulary")
+        // Nếu có tên chủ đề, thêm điều kiện lọc vào câu truy vấn
+        if (!topicName.isNullOrEmpty()) {
+            query = query.whereEqualTo("topic", topicName)
         }
+        // Thực thi truy vấn
+        query.get().addOnSuccessListener { querySnapshot ->
+            binding.progressBar.visibility = View.GONE
+            if (!querySnapshot.isEmpty) {
+                vocabularyList = querySnapshot.toObjects(Vocabulary::class.java)
+                displayCurrentCard()
+            } else {
+                Toast.makeText(requireContext(), "Chưa có từ vựng cho chủ đề này.", Toast.LENGTH_SHORT).show()
+            }
+        }.addOnFailureListener { exception ->
+            binding.progressBar.visibility = View.GONE
+            Log.e(TAG, "Error fetching vocabulary for topic: $topicName", exception)
+        }
+    }
+
+    private fun displayCurrentCard() {
+        if (vocabularyList.isNotEmpty() && currentCardIndex in vocabularyList.indices) {
+            val vocabulary = vocabularyList[currentCardIndex]
+            val progressPercentage = ((currentCardIndex + 1) * 100 / vocabularyList.size)
+            binding.progressIndicator.progress = progressPercentage
+            binding.tvWord.text = vocabulary.word
+            binding.tvPronunciation.text = vocabulary.pronunciation
+            binding.tvDefinition.text = vocabulary.definition
+            binding.tvWordTypeBack.text = vocabulary.type
+            binding.tvExample.text = "Example: ${vocabulary.example}"
+            Glide.with(this).load(vocabulary.imageUrl).into(binding.ivWordImage)
+            resetCard()
+        }
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private fun setupClickListeners() {
+        val flipClickListener = View.OnClickListener { flipCard() }
         binding.cardFront.setOnClickListener(flipClickListener)
         binding.cardBack.setOnClickListener(flipClickListener)
-
-        // Sự kiện cho nút "Từ tiếp"
-        binding.btnNext.setOnClickListener {
-            if (currentCardIndex < vocabularyList.size - 1) {
-                currentCardIndex++
-                displayCurrentCard()
-            } else {
-                Toast.makeText(requireContext(), "Bạn đã xem hết từ vựng!", Toast.LENGTH_SHORT).show()
-            }
+        // Gán sự kiện lắng nghe thao tác vuốt cho khu vực chứa thẻ
+        binding.cardContainer.setOnTouchListener { _, event ->
+            handleSwipe(event)
+            // Trả về false để các sự kiện click khác (như lật thẻ) vẫn hoạt động
+            false
         }
+        binding.btnIKnow.setOnClickListener { saveWordProgress(isLearned = true) }
+        binding.btnDontKnow.setOnClickListener { saveWordProgress(isLearned = false) }
+        binding.btnNext.setOnClickListener { handleNextWord() }
+        binding.btnPrev.setOnClickListener { handlePrevWord() }
+    }
 
-        // Sự kiện cho nút "Từ trước"
-        binding.btnPrev.setOnClickListener {
-            if (currentCardIndex > 0) {
-                currentCardIndex--
-                displayCurrentCard()
-            } else {
-                Toast.makeText(requireContext(), "Đây là từ đầu tiên!", Toast.LENGTH_SHORT).show()
+    // --- HÀM XỬ LÝ VUỐT ---
+    private fun handleSwipe(event: MotionEvent) {
+        when (event.action) {
+            // Khi người dùng bắt đầu chạm vào màn hình
+            MotionEvent.ACTION_DOWN -> {
+                x1 = event.x
+            }
+            // Khi người dùng nhấc ngón tay lên
+            MotionEvent.ACTION_UP -> {
+                x2 = event.x
+                val deltaX = x2 - x1
+
+                // Kiểm tra xem khoảng cách có đủ lớn để coi là một cú vuốt không
+                if (deltaX < -MIN_SWIPE_DISTANCE) {
+                    // Vuốt sang trái -> Qua từ tiếp theo
+                    handleNextWord()
+                } else if (deltaX > MIN_SWIPE_DISTANCE) {
+                    // Vuốt sang phải -> Quay lại từ trước
+                    handlePrevWord()
+                }
             }
         }
     }
 
     private fun flipCard() {
         if (isFrontVisible) {
-            // Lật từ trước ra sau
-            binding.cardFront.animate().rotationY(90f).setDuration(300).withEndAction {
-                binding.cardFront.visibility = View.GONE
-                binding.cardBack.visibility = View.VISIBLE
-                binding.cardBack.rotationY = -90f
-                binding.cardBack.animate().rotationY(0f).setDuration(300).start()
-            }.start()
+            frontAnim.setTarget(binding.cardFront)
+            backAnim.setTarget(binding.cardBack)
+            frontAnim.start()
+            backAnim.start()
+            binding.cardBack.visibility = View.VISIBLE
+            binding.cardFront.visibility = View.GONE
         } else {
-            // Lật từ sau ra trước
-            binding.cardBack.animate().rotationY(-90f).setDuration(300).withEndAction {
-                binding.cardBack.visibility = View.GONE
-                binding.cardFront.visibility = View.VISIBLE
-                binding.cardFront.rotationY = 90f
-                binding.cardFront.animate().rotationY(0f).setDuration(300).start()
-            }.start()
+            frontAnim.setTarget(binding.cardBack)
+            backAnim.setTarget(binding.cardFront)
+            frontAnim.start()
+            backAnim.start()
+            binding.cardFront.visibility = View.VISIBLE
+            binding.cardBack.visibility = View.GONE
         }
         isFrontVisible = !isFrontVisible
     }
 
+    private fun handleNextWord() {
+        if (currentCardIndex < vocabularyList.size - 1) {
+            currentCardIndex++
+            displayCurrentCard()
+        } else {
+            Toast.makeText(requireContext(), "Bạn đã xem hết từ vựng!", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun handlePrevWord() {
+        if (currentCardIndex > 0) {
+            currentCardIndex--
+            displayCurrentCard()
+        } else {
+            Toast.makeText(requireContext(), "Đây là từ đầu tiên!", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // --- HÀM LƯU TIẾN ĐỘ TỪ VỰNG ---
+    private fun saveWordProgress(isLearned: Boolean) {
+        if (currentCardIndex !in vocabularyList.indices) return
+        val uid = firebaseAuth.currentUser?.uid ?: return
+        val wordId = vocabularyList[currentCardIndex].id
+
+        setInteractionEnabled(false)
+
+        val progressData = VocabularyProgress(isLearned = isLearned)
+
+        val fieldToUpdate = "vocabularyProgress.$wordId"
+
+        db.collection("userProgress").document(uid)
+            .update(fieldToUpdate, progressData)
+            .addOnSuccessListener {
+                Log.d(TAG, "Progress for word '$wordId' saved.")
+                // Tự động chuyển sang từ tiếp theo để luồng học mượt mà
+                handleNextWord()
+            }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Error saving word progress", e)
+                Toast.makeText(requireContext(), "Lỗi khi lưu tiến độ", Toast.LENGTH_SHORT).show()
+            }
+            .addOnCompleteListener {
+                setInteractionEnabled(true)
+            }
+    }
+
+    // --- HÀM RESETCARD ---
     private fun resetCard() {
-        // Hàm này đảm bảo mỗi khi chuyển thẻ mới, nó sẽ luôn hiển thị mặt trước
+        // Hủy các animation đang chạy (nếu có) để tránh lỗi
+        frontAnim.cancel()
+        backAnim.cancel()
+
         isFrontVisible = true
-        binding.cardFront.visibility = View.VISIBLE
-        binding.cardBack.visibility = View.GONE
-        // Reset góc xoay về 0 để tránh lỗi hiển thị sau khi lật
+        // Reset góc xoay về 0
         binding.cardFront.rotationY = 0f
         binding.cardBack.rotationY = 0f
+        // Reset hiển thị về trạng thái ban đầu
+        binding.cardFront.visibility = View.VISIBLE
+        binding.cardBack.visibility = View.GONE
+    }
+
+    private fun setInteractionEnabled(enabled: Boolean) {
+        binding.btnIKnow.isEnabled = enabled
+        binding.btnDontKnow.isEnabled = enabled
+        binding.btnNext.isEnabled = enabled
+        binding.btnPrev.isEnabled = enabled
     }
 }
