@@ -27,7 +27,6 @@ class ListenChooseCorrectFragment : Fragment(), TextToSpeech.OnInitListener {
     private lateinit var optionButtons: List<MaterialButton>
     private lateinit var firebaseAuth: FirebaseAuth
     private lateinit var db: FirebaseFirestore
-
     private var questions: List<Map<String, Any>> = emptyList()
     private var currentQuestionIndex = 0
     private var score = 0
@@ -40,7 +39,6 @@ class ListenChooseCorrectFragment : Fragment(), TextToSpeech.OnInitListener {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         initFirebase()
         optionButtons = listOf(binding.btnOption1, binding.btnOption2, binding.btnOption3, binding.btnOption4)
         setupClickListeners()
@@ -79,9 +77,15 @@ class ListenChooseCorrectFragment : Fragment(), TextToSpeech.OnInitListener {
                 binding.btnSpeak.isEnabled = false
             } else {
                 binding.btnSpeak.isEnabled = true
+                Log.d(TAG, "TTS Initialized Successfully!")
+                // Phát âm câu đầu tiên nếu có
+                if (questions.isNotEmpty()) {
+                    speakCurrentSentence()
+                }
             }
         } else {
             Log.e(TAG, "TTS Initialization Failed!")
+            binding.btnSpeak.isEnabled = false
         }
     }
 
@@ -127,17 +131,16 @@ class ListenChooseCorrectFragment : Fragment(), TextToSpeech.OnInitListener {
 
                     // Reset màu của nút về trạng thái mặc định
                     button.strokeColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.default_stroke_color))
-                    // QUAN TRỌNG: Gán sự kiện click cho từng nút lựa chọn ở đây
-                    button.setOnClickListener {
-                        // Khi người dùng nhấn vào nút này, ta gọi hàm handleAnswer và truyền vào chính cái nút đã được nhấn.
-                        handleAnswer(button, correctAnswer)
-                    }
+                    button.setOnClickListener { handleAnswer(button, correctAnswer) }
                 } else {
                     button.visibility = View.GONE
                 }
             }
+            val progressPercentage = ((currentQuestionIndex + 1) * 100 / questions.size)
+            binding.progressIndicator.progress = progressPercentage
             binding.btnNext.visibility = View.GONE
-            binding.tvProgress.text = "Câu hỏi: ${currentQuestionIndex + 1}/${questions.size}"
+            hideFeedbackPanel()
+            speakCurrentSentence()
         } else {
              showCompletionDialog()
         }
@@ -150,18 +153,15 @@ class ListenChooseCorrectFragment : Fragment(), TextToSpeech.OnInitListener {
         val isCorrect = clickedButton.text.toString() == correctAnswer
         if (isCorrect) {
             score++
-            // Đánh dấu nút đúng màu xanh
             clickedButton.strokeColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.correct_green))
         } else {
-            // Đánh dấu nút sai màu đỏ
             clickedButton.strokeColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.incorrect_red))
-            // Tìm và đánh dấu nút đúng màu xanh để người dùng biết
             optionButtons.find { it.text.toString() == correctAnswer }?.apply {
-                // set stroke color to green
                 strokeColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.correct_green))
             }
         }
-        binding.btnNext.visibility = View.VISIBLE
+        showFeedbackPanel(isCorrect, correctAnswer)
+
     }
 
     private fun handleNextQuestion() {
@@ -174,6 +174,30 @@ class ListenChooseCorrectFragment : Fragment(), TextToSpeech.OnInitListener {
             val sentence = questions[currentQuestionIndex]["en_sentence"] as? String ?: ""
             tts.speak(sentence, TextToSpeech.QUEUE_FLUSH, null, "")
         }
+    }
+
+    private fun showFeedbackPanel(isCorrect: Boolean, correctAnswer: String) {
+        if (isCorrect) {
+            binding.feedbackPanel.backgroundTintList = ContextCompat.getColorStateList(requireContext(), R.color.correct_green_bg)
+            binding.tvFeedback.text = "Chính xác!"
+            binding.tvFeedback.setTextColor(ContextCompat.getColor(requireContext(), R.color.correct_green))
+            binding.tvCorrectAnswer.visibility = View.GONE
+        } else {
+            binding.feedbackPanel.backgroundTintList = ContextCompat.getColorStateList(requireContext(), R.color.incorrect_red_bg)
+            binding.tvFeedback.text = "Chưa chính xác!"
+            binding.tvFeedback.setTextColor(ContextCompat.getColor(requireContext(), R.color.incorrect_red))
+            binding.tvCorrectAnswer.visibility = View.VISIBLE
+            binding.tvCorrectAnswer.text = "Đáp án đúng: $correctAnswer"
+        }
+        binding.feedbackPanel.visibility = View.VISIBLE
+        binding.feedbackPanel.translationY = binding.feedbackPanel.height.toFloat()
+        binding.feedbackPanel.animate().translationY(0f).setDuration(300).start()
+        binding.btnNext.visibility = View.VISIBLE
+    }
+
+    private fun hideFeedbackPanel() {
+        binding.feedbackPanel.visibility = View.GONE
+        binding.feedbackPanel.translationY = binding.feedbackPanel.height.toFloat()
     }
 
     // --- HIỂN THỊ HỘP THOẠI KHI HOÀN THÀNH ---
@@ -216,12 +240,12 @@ class ListenChooseCorrectFragment : Fragment(), TextToSpeech.OnInitListener {
             .addOnFailureListener { e -> Log.w(TAG, "Error saving lesson progress", e) }
     }
 
-    override fun onDestroy() {
+    override fun onDestroyView() {
         // Giải phóng tài nguyên TTS khi Fragment bị hủy để tránh memory leak
         if (::tts.isInitialized) {
             tts.stop()
             tts.shutdown()
         }
-        super.onDestroy()
+        super.onDestroyView()
     }
 }

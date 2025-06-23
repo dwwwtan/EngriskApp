@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFF3F7"
+    android:background="@color/white"
     tools:context=".vocabulary.flashcard.FlashcardFragment">
 
     <com.google.android.material.progressindicator.LinearProgressIndicator
@@ -14,10 +14,13 @@
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
+        app:indicatorColor="@color/black"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:progress="50" />
+        app:trackColor="#E0E0E0"
+        app:trackCornerRadius="8dp"
+        tools:progress="60" />
 
     <FrameLayout
         android:id="@+id/card_container"
@@ -37,11 +40,13 @@
             android:id="@+id/card_back"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:backgroundTint="@color/default_background"
             android:visibility="gone"
             app:cardCornerRadius="20dp"
             app:cardElevation="10dp"
-            app:strokeWidth="1dp"
-            app:strokeColor="#DDD">
+            app:strokeColor="#DDD"
+            app:strokeWidth="1dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -69,12 +74,14 @@
                         android:textSize="20sp"
                         android:textStyle="bold"
                         tools:text="Công nghệ" />
+
                     <TextView
                         android:id="@+id/tv_word_type_back"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textStyle="italic"
                         tools:text="Noun" />
+
                     <TextView
                         android:id="@+id/tv_example"
                         android:layout_width="wrap_content"
@@ -90,10 +97,12 @@
             android:id="@+id/card_front"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:backgroundTint="@color/default_background"
             app:cardCornerRadius="20dp"
             app:cardElevation="10dp"
-            app:strokeWidth="1dp"
-            app:strokeColor="#DDD">
+            app:strokeColor="#DDD"
+            app:strokeWidth="1dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -110,14 +119,30 @@
                     android:textStyle="bold"
                     tools:text="Technology" />
 
-                <TextView
-                    android:id="@+id/tv_pronunciation"
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:textSize="20sp"
-                    tools:text="/tekˈnɒl.ə.dʒi/" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
+                    <TextView
+                        android:id="@+id/tv_pronunciation"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="20sp"
+                        tools:text="/tekˈnɒl.ə.dʒi/" />
+
+                    <ImageButton
+                        android:id="@+id/btn_speak"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_marginStart="16dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Phát âm"
+                        android:enabled="false"
+                        android:src="@drawable/ic_speak_24" />
+                </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -127,65 +152,66 @@
         android:id="@+id/know_status_buttons"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:layout_marginStart="24dp"
         android:layout_marginEnd="24dp"
         android:layout_marginBottom="16dp"
+        android:orientation="horizontal"
         app:layout_constraintBottom_toTopOf="@+id/controls_container"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_dont_know"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:layout_marginEnd="8dp"
-            android:text="Chưa biết"/>
+            android:layout_weight="1"
+            android:backgroundTint="@color/action_dont_know"
+            android:text="Chưa biết" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_i_know"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:layout_marginStart="8dp"
-            android:text="Đã biết"/>
+            android:layout_weight="1"
+            android:backgroundTint="@color/action_know"
+            android:text="Đã biết" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/controls_container"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
         android:layout_marginBottom="16dp"
+        android:gravity="center"
+        android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
 
         <ImageButton
             android:id="@+id/btn_prev"
             android:layout_width="64dp"
             android:layout_height="64dp"
-            android:src="@drawable/ic_arrow_left_24"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Từ trước" />
+            android:contentDescription="Từ trước"
+            android:src="@drawable/ic_arrow_left_24" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="24dp"
             android:text="Vuốt hoặc bấm để chuyển thẻ"
-            android:textSize="12sp"/>
+            android:textSize="12sp" />
 
         <ImageButton
             android:id="@+id/btn_next"
             android:layout_width="64dp"
             android:layout_height="64dp"
-            android:src="@drawable/ic_arrow_right_24"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Từ tiếp theo" />
+            android:contentDescription="Từ tiếp theo"
+            android:src="@drawable/ic_arrow_right_24" />
     </LinearLayout>
 
     <ProgressBar
@@ -193,10 +219,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        tools:visibility="visible"/>
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="visible" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

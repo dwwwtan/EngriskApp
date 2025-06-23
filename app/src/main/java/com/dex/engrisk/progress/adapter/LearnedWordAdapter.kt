@@ -1,4 +1,4 @@
-package com.dex.engrisk.adapter
+package com.dex.engrisk.progress.adapter
 
 import android.annotation.SuppressLint
 import android.view.LayoutInflater

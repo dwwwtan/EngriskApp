@@ -4,97 +4,122 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp"
-    tools:context=".lesson.lessondetail.ListenFillBlankFragment">
+    android:background="@color/white"
+    tools:context=".lesson.lessondetail.ListenChooseCorrectFragment">
 
-    <TextView
-        android:id="@+id/tv_progress"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="16sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:text="Câu hỏi: 1/10" />
-
-    <TextView
-        android:id="@+id/tv_source_sentence_label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:text="Nghe và chọn đáp án đúng:"
-        android:textSize="18sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_progress" />
-
-    <ImageButton
-        android:id="@+id/btn_speak"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
-        android:layout_marginTop="24dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:src="@android:drawable/ic_lock_silent_mode_off"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_source_sentence_label"
-        app:tint="?attr/colorPrimary"
-        tools:ignore="ContentDescription" />
-
-    <LinearLayout
-        android:id="@+id/options_container"
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/progress_indicator"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_marginTop="24dp"
-        app:layout_constraintTop_toBottomOf="@id/btn_speak"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        app:indicatorColor="@color/black"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toTopOf="parent"
+        app:trackColor="#E0E0E0"
+        app:trackCornerRadius="8dp"
+        tools:progress="60" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_option1"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+    <LinearLayout
+        android:id="@+id/main_content"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="24dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/progress_indicator">
+
+        <TextView
+            android:id="@+id/tv_instruction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Nghe và chọn đáp án đúng:"
+            android:textSize="18sp" />
+
+        <ImageButton
+            android:id="@+id/btn_speak"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_marginTop="24dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Phát âm"
+            android:src="@drawable/ic_speak_24" />
+
+        <LinearLayout
+            android:id="@+id/options_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            tools:text="Đáp án A"/>
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_option2"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            tools:text="Đáp án B"/>
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_option3"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            tools:text="Đáp án C"/>
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_option4"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            tools:text="Đáp án D"/>
+            android:layout_marginTop="32dp"
+            android:orientation="vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_option1"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:backgroundTint="@color/default_background"
+                android:paddingVertical="12dp"
+                android:textColor="@color/black"
+                tools:text="Đáp án A" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_option2"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="@color/default_background"
+                android:paddingVertical="12dp"
+                android:textColor="@color/black"
+                tools:text="Đáp án B" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_option3"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="@color/default_background"
+                android:paddingVertical="12dp"
+                android:textColor="@color/black"
+                tools:text="Đáp án C" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_option4"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="@color/default_background"
+                android:paddingVertical="12dp"
+                android:textColor="@color/black"
+                tools:text="Đáp án D" />
+        </LinearLayout>
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/layout_feedback"
+        android:id="@+id/feedback_panel"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:background="@drawable/background_feedback_panel"
         android:orientation="vertical"
+        android:padding="24dp"
         android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/options_container"
+        tools:backgroundTint="@color/incorrect_red_bg"
         tools:visibility="visible">
 
         <TextView
             android:id="@+id/tv_feedback"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="18sp"
+            android:textSize="20sp"
             android:textStyle="bold"
             tools:text="Chính xác!"
             tools:textColor="@color/correct_green" />
@@ -103,32 +128,22 @@
             android:id="@+id/tv_correct_answer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="8dp"
             android:textSize="16sp"
-            tools:text="Đáp án đúng: I am learning English every day." />
+            android:visibility="gone"
+            tools:text="Đáp án đúng: Cô ấy đang viết một lá thư cho bạn của mình."
+            tools:visibility="visible" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_next"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:backgroundTint="@color/green"
+            android:paddingVertical="14dp"
+            android:text="Tiếp tục"
+            app:cornerRadius="24dp" />
     </LinearLayout>
-
-    <Button
-        android:id="@+id/btn_check"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:text="Kiểm tra"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <Button
-        android:id="@+id/btn_next"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:text="Tiếp tục"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        tools:visibility="visible" />
 
     <ProgressBar
         android:id="@+id/progress_bar"

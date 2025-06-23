@@ -11,7 +11,7 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.dex.engrisk.R
-import com.dex.engrisk.adapter.LessonAdapter
+import com.dex.engrisk.lesson.adapter.LessonAdapter
 import com.dex.engrisk.databinding.FragmentLessonListBinding
 import com.dex.engrisk.model.Lesson
 import com.google.firebase.firestore.FirebaseFirestore
@@ -34,53 +34,35 @@ class LessonListFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
+        initFirebase()
         setupRecyclerView()
 
         // Lấy tham số levelName được gửi đến
         val levelName = arguments?.getString("levelName")
 
-        if (levelName != null) {
-            // Nếu có levelName, thực hiện lấy dữ liệu
+        if (!levelName.isNullOrEmpty()) {
+            // Cập nhật tiêu đề màn hình
+            binding.tvLevelTitle.text = "$levelName"
             fetchLessons(levelName)
         } else {
-            // Xử lý lỗi nếu không có tham số được truyền
             Log.e(TAG, "Level name argument is missing!")
         }
     }
 
+    private fun initFirebase() {
+        db = FirebaseFirestore.getInstance()
+    }
+
     private fun setupRecyclerView() {
         lessonAdapter = LessonAdapter(emptyList()) { clickedLesson ->
-            // Dùng when để kiểm tra loại bài học
+            // Tạo một bundle để chứa ID của bài học được chọn
+            val bundle = bundleOf("lessonId" to clickedLesson.id)
             when (clickedLesson.type) {
-                // Nếu là 1 trong 2 loại này, đi đến màn hình dịch câu
-                "TRANSLATE_VI_EN", "TRANSLATE_EN_VI" -> {
-                    // Tạo một bundle để chứa ID của bài học được chọn
-                    val bundle = bundleOf("lessonId" to clickedLesson.id)
-                    // Điều hướng đến màn hình game, gửi kèm bundle chứa ID
-                    findNavController().navigate(R.id.action_to_translateFragment, bundle)
-                }
-
-                // THÊM CASE MỚI
-                "LISTEN_FILL_BLANK" -> {
-                    val bundle = bundleOf("lessonId" to clickedLesson.id)
-                    findNavController().navigate(R.id.action_to_listenFillBlankFragment, bundle)
-                }
-
-                // ...
-                "LISTEN_CHOOSE_CORRECT" -> {
-                    val bundle = bundleOf("lessonId" to clickedLesson.id)
-                    findNavController().navigate(R.id.action_to_listenChooseCorrectFragment, bundle)
-                }
-// ...
-
+                "TRANSLATE_VI_EN", "TRANSLATE_EN_VI" -> { findNavController().navigate(R.id.action_to_translateFragment, bundle) }
+                "LISTEN_FILL_BLANK" -> { findNavController().navigate(R.id.action_to_listenFillBlankFragment, bundle) }
+                "LISTEN_CHOOSE_CORRECT" -> { findNavController().navigate(R.id.action_to_listenChooseCorrectFragment, bundle) }
                 else -> {
-                    // Nếu gặp loại bài học chưa được hỗ trợ
-                    Toast.makeText(
-                        requireContext(),
-                        "Loại bài học này chưa được hỗ trợ.",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(requireContext(), "Loại bài học này chưa được hỗ trợ.", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -93,20 +75,29 @@ class LessonListFragment : Fragment() {
 
     private fun fetchLessons(levelName: String) {
         binding.progressBar.visibility = View.VISIBLE
+        binding.tvEmptyState.visibility = View.GONE
 
-        db = FirebaseFirestore.getInstance()
         db.collection("lessons")
-            .whereEqualTo("level", levelName) // <-- SỬ DỤNG THAM SỐ Ở ĐÂY
+            .whereEqualTo("level", levelName)
             .orderBy("order", Query.Direction.ASCENDING)
             .get()
             .addOnSuccessListener { querySnapshot ->
-                val lessons = querySnapshot.toObjects(Lesson::class.java)
-                lessonAdapter.updateLessons(lessons)
                 binding.progressBar.visibility = View.GONE
+                val lessons = querySnapshot.toObjects(Lesson::class.java)
+                if (lessons.isEmpty()) {
+                    binding.rvLessons.visibility = View.GONE
+                    binding.tvEmptyState.visibility = View.VISIBLE
+                } else {
+                    binding.rvLessons.visibility = View.VISIBLE
+                    binding.tvEmptyState.visibility = View.GONE
+                    lessonAdapter.updateLessons(lessons)
+                }
                 Log.d(TAG, "Fetched ${lessons.size} lessons for level: $levelName")
             }
             .addOnFailureListener { exception ->
                 binding.progressBar.visibility = View.GONE
+                binding.tvEmptyState.visibility = View.VISIBLE // Hiển thị lỗi nếu không tải được
+                binding.tvEmptyState.text = "Lỗi khi tải bài học."
                 Log.w(TAG, "Error getting documents for level $levelName: ", exception)
             }
     }

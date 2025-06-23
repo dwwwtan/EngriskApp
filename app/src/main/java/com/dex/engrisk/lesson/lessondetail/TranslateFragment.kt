@@ -95,7 +95,6 @@ class TranslateFragment : Fragment() {
     private fun displayCurrentQuestion() {
         if (currentQuestionIndex < questions.size) {
             val question = questions[currentQuestionIndex]
-
             val sourceSentence = when (lessonType) {
                 "TRANSLATE_VI_EN" -> question["vi_sentence"] ?: ""
                 "TRANSLATE_EN_VI" -> question["en_sentence"] ?: ""
@@ -108,14 +107,14 @@ class TranslateFragment : Fragment() {
                 else -> "Dịch câu sau:"
             }
 
-            binding.tvProgress.text = "Câu hỏi: ${currentQuestionIndex + 1}/${questions.size}"
+            val progressPercentage = ((currentQuestionIndex + 1) * 100 / questions.size)
+            binding.progressIndicator.progress = progressPercentage
             binding.tvSourceSentence.text = sourceSentence
             binding.etAnswer.text?.clear()
             binding.etAnswer.isEnabled = true
-
-            binding.layoutFeedback.visibility = View.GONE
+            binding.btnCheck.isEnabled = true
             binding.btnCheck.visibility = View.VISIBLE
-            binding.btnNext.visibility = View.GONE
+            hideFeedbackPanel()
         } else {
             showCompletionDialog()
         }
@@ -134,24 +133,42 @@ class TranslateFragment : Fragment() {
         }
 
         binding.etAnswer.isEnabled = false
-        binding.layoutFeedback.visibility = View.VISIBLE
+        binding.btnCheck.isEnabled = false
 
-        if (userAnswer.equals(correctAnswer, ignoreCase = true)) {
-            // --- TRẢ LỜI ĐÚNG ---
+        val isCorrect = userAnswer.equals(correctAnswer, ignoreCase = true)
+        if (isCorrect) {
             score++
+        }
+        showFeedbackPanel(isCorrect, correctAnswer)
+    }
+
+    private fun showFeedbackPanel(isCorrect: Boolean, correctAnswer: String) {
+        if (isCorrect) {
+            binding.feedbackPanel.backgroundTintList = ContextCompat.getColorStateList(requireContext(), R.color.correct_green_bg)
             binding.tvFeedback.text = "Chính xác!"
             binding.tvFeedback.setTextColor(ContextCompat.getColor(requireContext(), R.color.correct_green))
             binding.tvCorrectAnswer.visibility = View.GONE
         } else {
-            // --- TRẢ LỜI SAI ---
+            binding.feedbackPanel.backgroundTintList = ContextCompat.getColorStateList(requireContext(), R.color.incorrect_red_bg)
             binding.tvFeedback.text = "Chưa chính xác!"
             binding.tvFeedback.setTextColor(ContextCompat.getColor(requireContext(), R.color.incorrect_red))
             binding.tvCorrectAnswer.visibility = View.VISIBLE
             binding.tvCorrectAnswer.text = "Đáp án đúng: $correctAnswer"
         }
 
+        // Chuẩn bị cho animation
+        binding.feedbackPanel.visibility = View.VISIBLE
+        binding.feedbackPanel.translationY = binding.feedbackPanel.height.toFloat() // Đưa panel xuống dưới
+
+        // Bắt đầu animation trượt lên
+        binding.feedbackPanel.animate().translationY(0f).setDuration(300).start()
         binding.btnCheck.visibility = View.GONE
-        binding.btnNext.visibility = View.VISIBLE
+    }
+
+    private fun hideFeedbackPanel() {
+        binding.feedbackPanel.visibility = View.GONE
+        // Đặt lại vị trí ban đầu cho lần hiển thị sau
+        binding.feedbackPanel.translationY = binding.feedbackPanel.height.toFloat()
     }
 
     // --- XỬ LÝ KHI NHẤN NÚT "TIẾP TỤC" ---

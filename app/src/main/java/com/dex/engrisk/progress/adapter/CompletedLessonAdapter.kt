@@ -1,4 +1,4 @@
-package com.dex.engrisk.adapter
+package com.dex.engrisk.progress.adapter
 
 import android.annotation.SuppressLint
 import android.view.LayoutInflater
@@ -8,6 +8,7 @@ import com.dex.engrisk.databinding.ItemCompletedLessonBinding
 import com.dex.engrisk.model.CompletedLesson
 import java.text.SimpleDateFormat
 import java.util.Locale
+import com.dex.engrisk.R
 
 class CompletedLessonAdapter(
     private var completedLessons: List<CompletedLesson>,
@@ -23,15 +24,28 @@ class CompletedLessonAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val completedLesson = completedLessons[position]
-
-        // Bây giờ ta có thể lấy title từ lessonDetails
-        holder.binding.tvLessonTitle.text = completedLesson.lessonDetails.title
-
-        // Lấy điểm số và ngày tháng từ progressDetails
+        val lesson = completedLesson.lessonDetails
         val progress = completedLesson.progressDetails
+
+        holder.binding.tvLessonTitle.text = completedLesson.lessonDetails.title
         holder.binding.tvScore.text = "${progress.score}/${progress.totalQuestions}"
         val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
         holder.binding.tvCompletedDate.text = "Hoàn thành: ${sdf.format(progress.completedAt.toDate())}"
+
+        when (lesson.type) {
+            "TRANSLATE_VI_EN", "TRANSLATE_EN_VI" -> {
+                holder.binding.ivLessonIcon.setImageResource(R.drawable.ic_translate_24)
+            }
+            "LISTEN_FILL_BLANK" -> {
+                holder.binding.ivLessonIcon.setImageResource(R.drawable.ic_edit_note_24)
+            }
+            "LISTEN_CHOOSE_CORRECT" -> {
+                holder.binding.ivLessonIcon.setImageResource(R.drawable.ic_check_circle_24)
+            }
+            else -> {
+                holder.binding.ivLessonIcon.setImageResource(R.drawable.ic_lesson_default_24)
+            }
+        }
 
         holder.itemView.setOnClickListener {
             // Khi được nhấn, gọi hàm callback và truyền vào đối tượng của item đó

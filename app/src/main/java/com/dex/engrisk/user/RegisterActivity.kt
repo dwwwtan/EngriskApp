@@ -5,8 +5,10 @@ import android.os.Bundle
 import android.util.Log
 import android.util.Patterns
 import android.view.View
+import androidx.core.text.HtmlCompat
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.dex.engrisk.R
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.dex.engrisk.databinding.ActivityRegisterBinding
@@ -35,6 +37,8 @@ class RegisterActivity : AppCompatActivity() {
 
     private fun setupClickListeners() {
         binding.btnRegister.setOnClickListener { validateInputAndRegister() }
+        val loginText = getString(R.string.prompt_have_account)
+        binding.tvLoginPrompt.text = HtmlCompat.fromHtml(loginText, HtmlCompat.FROM_HTML_MODE_LEGACY)
         binding.tvLoginPrompt.setOnClickListener {
             startActivity(Intent(this, LoginActivity::class.java))
             finish()

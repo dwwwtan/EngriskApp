@@ -4,10 +4,13 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.util.Patterns
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.dex.engrisk.MainActivity
+import androidx.core.text.HtmlCompat
+import com.dex.engrisk.R
 import com.dex.engrisk.databinding.ActivityLoginBinding
 import com.google.firebase.auth.FirebaseAuth
 
@@ -31,11 +34,10 @@ class LoginActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
-
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
         initFirebase()
         setupClickListeners()
     }
@@ -47,6 +49,8 @@ class LoginActivity : AppCompatActivity() {
 
     private fun setupClickListeners() {
         binding.btnLogin.setOnClickListener { validateInputAndLogin() }
+        val registerText = getString(R.string.prompt_no_account)
+        binding.tvRegisterPrompt.text = HtmlCompat.fromHtml(registerText, HtmlCompat.FROM_HTML_MODE_LEGACY)
         binding.tvRegisterPrompt.setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
         }

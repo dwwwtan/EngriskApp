@@ -7,7 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.dex.engrisk.adapter.LearnedWordAdapter
+import com.dex.engrisk.progress.adapter.LearnedWordAdapter
 import com.dex.engrisk.databinding.FragmentLearnedWordsBinding
 import com.dex.engrisk.model.UserProgress
 import com.dex.engrisk.model.Vocabulary
@@ -53,7 +53,6 @@ class LearnedWordsFragment : Fragment() {
                     fetchWordDetails(learnedWordsMap.keys.toList())
                 } else {
                     binding.progressBar.visibility = View.GONE
-                    // TODO: Hiển thị trạng thái rỗng ở đây
                 }
             }
             .addOnFailureListener {

@@ -15,4 +15,14 @@
     <string name="title_intermediate_lesson_fragment">Intermediate</string>
     <string name="title_advanced_lesson_fragment">Advanced</string>
     <string name="prompt_connect_us">Connect with Engrisk</string>
+    <string name="prompt_no_account">Chưa có tài khoản? <![CDATA[<b>Đăng ký ngay</b>]]></string>
+    <string name="prompt_have_account">Đã có tài khoản? <![CDATA[<b>Đăng nhập ngay</b>]]></string>
+    <string name="action_login">Đăng nhập</string>
+    <string name="prompt_hint_password">Mật khẩu</string>
+    <string name="prompt_hint_email">Email</string>
+    <string name="prompt_welcome_login">Chào mừng đến với Engrisk!</string>
+    <string name="prompt_hint_confirm_password">Xác nhận mật khẩu</string>
+    <string name="action_register">Đăng ký</string>
+    <string name="string_welcom_register">Tạo tài khoản mới</string>
+    <string name="prompt_no_lesson">Chưa có bài học cho cấp độ này</string>
 </resources>

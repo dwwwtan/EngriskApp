@@ -4,6 +4,7 @@ import android.animation.Animator
 import android.animation.AnimatorInflater
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.speech.tts.TextToSpeech
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -11,17 +12,18 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import com.dex.engrisk.R
 import com.bumptech.glide.Glide
+import com.dex.engrisk.R
 import com.dex.engrisk.databinding.FragmentFlashcardBinding
 import com.dex.engrisk.model.Vocabulary
-import com.google.firebase.Timestamp
 import com.dex.engrisk.model.VocabularyProgress
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import java.util.Locale
 
-class FlashcardFragment : Fragment() {
+class FlashcardFragment : Fragment(), TextToSpeech.OnInitListener {
 
     private val TAG = "FlashcardFragment"
     private lateinit var binding: FragmentFlashcardBinding
@@ -29,6 +31,7 @@ class FlashcardFragment : Fragment() {
     private lateinit var firebaseAuth: FirebaseAuth
     private lateinit var frontAnim: Animator
     private lateinit var backAnim: Animator
+    private lateinit var tts: TextToSpeech
 
     // --- BIẾN TRẠNG THÁI ---
     private var vocabularyList: List<Vocabulary> = emptyList()
@@ -42,6 +45,7 @@ class FlashcardFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentFlashcardBinding.inflate(inflater, container, false)
+        tts = TextToSpeech(requireContext(), this)
         return binding.root
     }
 
@@ -58,12 +62,41 @@ class FlashcardFragment : Fragment() {
         firebaseAuth = FirebaseAuth.getInstance()
     }
 
+    // Thiết lập các animation cho thẻ
     private fun setupAnimations() {
         val scale = requireContext().resources.displayMetrics.density
         binding.cardFront.cameraDistance = 8000 * scale
         binding.cardBack.cameraDistance = 8000 * scale
         frontAnim = AnimatorInflater.loadAnimator(requireContext(), R.animator.flip_out)
         backAnim = AnimatorInflater.loadAnimator(requireContext(), R.animator.flip_in)
+    }
+
+    // Implement hàm onInit của TTS
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            val result = tts.setLanguage(Locale.US)
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Log.e(TAG, "The specified language is not supported!")
+                binding.btnSpeak.isEnabled = false
+            } else {
+                binding.btnSpeak.isEnabled = true
+                Log.d(TAG, "TTS Initialized Successfully!")
+                // Phát âm câu đầu tiên nếu có
+                if (vocabularyList.isNotEmpty()) {
+                    speakCurrentWord()
+                }
+            }
+        } else {
+            Log.e(TAG, "TTS Initialization Failed!")
+            binding.btnSpeak.isEnabled = false
+        }
+    }
+
+    private fun speakCurrentWord() {
+        if (vocabularyList.isNotEmpty() && currentCardIndex in vocabularyList.indices) {
+            val wordToSpeak = vocabularyList[currentCardIndex].word
+            tts.speak(wordToSpeak, TextToSpeech.QUEUE_FLUSH, null, "")
+        }
     }
 
     private fun fetchVocabulary() {
@@ -101,6 +134,7 @@ class FlashcardFragment : Fragment() {
             binding.tvExample.text = "Example: ${vocabulary.example}"
             Glide.with(this).load(vocabulary.imageUrl).into(binding.ivWordImage)
             resetCard()
+            speakCurrentWord()
         }
     }
 
@@ -119,6 +153,7 @@ class FlashcardFragment : Fragment() {
         binding.btnDontKnow.setOnClickListener { saveWordProgress(isLearned = false) }
         binding.btnNext.setOnClickListener { handleNextWord() }
         binding.btnPrev.setOnClickListener { handlePrevWord() }
+        binding.btnSpeak.setOnClickListener { speakCurrentWord() }
     }
 
     // --- HÀM XỬ LÝ VUỐT ---
@@ -230,5 +265,14 @@ class FlashcardFragment : Fragment() {
         binding.btnDontKnow.isEnabled = enabled
         binding.btnNext.isEnabled = enabled
         binding.btnPrev.isEnabled = enabled
+    }
+
+    override fun onDestroyView() {
+        // Thay vì onDestroy, dùng onDestroyView trong Fragment sẽ an toàn hơn cho các tác vụ liên quan đến View
+        if (::tts.isInitialized) {
+            tts.stop()
+            tts.shutdown()
+        }
+        super.onDestroyView()
     }
 }

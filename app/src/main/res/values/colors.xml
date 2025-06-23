@@ -15,4 +15,21 @@
     <color name="intermediate_card">#C5D4FF</color>
     <color name="advanced_card">#D6BEFF</color>
     <color name="flashcard_card_background">#FFF3F7</color>
+    <color name="lesson_type_translate">#E3F2FD</color>
+    <color name="lesson_type_listen_fill">#FFF9C4</color>
+    <color name="lesson_type_listen_choice">#E8F5E9</color>
+    <color name="lesson_type_default">#F5F5F5</color>
+    <color name="light_pink">#FFF3F7</color>
+    <color name="correct_green_bg">#E8F5E9</color>
+    <color name="incorrect_red_bg">#FFEBEE</color>
+    <color name="green">#00C244</color>
+    <color name="answer_a">#636363</color>
+    <color name="answer_b">#a977ff</color>
+    <color name="answer_c">#5A4E94</color>
+    <color name="answer_d">#FF558D</color>
+    <color name="answer_bg">#FFFACD</color>
+    <color name="action_dont_know">#FF4C54</color>
+    <color name="action_know">#006F24</color>
+    <color name="ic_launcher_background">#FFFFFF</color>
+
 </resources>

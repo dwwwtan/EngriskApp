@@ -84,14 +84,11 @@ class ListenFillBlankFragment : Fragment(), TextToSpeech.OnInitListener {
             } else {
                 binding.btnSpeak.isEnabled = true
                 Log.d(TAG, "TTS Initialized Successfully!")
-                // Phát âm câu đầu tiên nếu có
-                if (questions.isNotEmpty()) {
-                    speakCurrentSentence()
-                }
+                // Phát âm câu đầu tiên
+                speakCurrentSentence()
             }
         } else {
             Log.e(TAG, "TTS Initialization Failed!")
-            binding.btnSpeak.isEnabled = false
         }
     }
 
@@ -119,8 +116,6 @@ class ListenFillBlankFragment : Fragment(), TextToSpeech.OnInitListener {
             }
     }
 
-
-
     private fun speakCurrentSentence() {
         if (currentQuestionIndex < questions.size) {
             val question = questions[currentQuestionIndex]
@@ -140,16 +135,16 @@ class ListenFillBlankFragment : Fragment(), TextToSpeech.OnInitListener {
             // Hiển thị câu hỏi
             val sentenceWithBlank = fullSentence.replace(blankWord, "______", ignoreCase = true)
 
+            val progressPercentage = ((currentQuestionIndex + 1) * 100 / questions.size)
+            binding.progressIndicator.progress = progressPercentage
             // Hiển thị câu đã được xử lý ra giao diện
             binding.tvSourceSentence.text = sentenceWithBlank
-            binding.tvProgress.text = "Câu hỏi: ${currentQuestionIndex + 1}/${questions.size}"
             binding.etAnswer.text?.clear()
             binding.etAnswer.isEnabled = true
-
-            // Reset trạng thái các nút và feedback
-            binding.layoutFeedback.visibility = View.GONE
+            binding.btnCheck.isEnabled = true
             binding.btnCheck.visibility = View.VISIBLE
-            binding.btnNext.visibility = View.GONE
+            hideFeedbackPanel()
+            speakCurrentSentence()
         } else {
             showCompletionDialog()
         }
@@ -162,30 +157,44 @@ class ListenFillBlankFragment : Fragment(), TextToSpeech.OnInitListener {
         val correctAnswer = question["blank_word"] ?: ""
 
         binding.etAnswer.isEnabled = false
-        binding.layoutFeedback.visibility = View.VISIBLE
+        binding.btnCheck.isEnabled = false
 
-        if (userAnswer.equals(correctAnswer, ignoreCase = true)) {
-            // --- TRẢ LỜI ĐÚNG ---
+        val isCorrect = userAnswer.equals(correctAnswer, ignoreCase = true)
+        if (isCorrect) {
             score++
-            binding.tvFeedback.text = "Chính xác!"
-            binding.tvFeedback.setTextColor(ContextCompat.getColor(requireContext(), R.color.correct_green))
-            binding.tvCorrectAnswer.visibility = View.GONE
-        } else {
-            // --- TRẢ LỜI SAI ---
-            binding.tvFeedback.text = "Chưa chính xác!"
-            binding.tvFeedback.setTextColor(ContextCompat.getColor(requireContext(), R.color.incorrect_red))
-            binding.tvCorrectAnswer.visibility = View.VISIBLE
-            binding.tvCorrectAnswer.text = "Đáp án đúng: $correctAnswer"
         }
 
-        binding.btnCheck.visibility = View.GONE
-        binding.btnNext.visibility = View.VISIBLE
+        showFeedbackPanel(isCorrect, "Đáp án đúng: ${questions[currentQuestionIndex]["full_sentence"]}")
     }
 
     // --- XỬ LÝ KHI NHẤN NÚT "TIẾP TỤC" ---
     private fun handleNextQuestion() {
         currentQuestionIndex++
         displayCurrentQuestion()
+    }
+
+    private fun showFeedbackPanel(isCorrect: Boolean, correctAnswerText: String) {
+        if (isCorrect) {
+            binding.feedbackPanel.backgroundTintList = ContextCompat.getColorStateList(requireContext(), R.color.correct_green_bg)
+            binding.tvFeedback.text = "Chính xác!"
+            binding.tvFeedback.setTextColor(ContextCompat.getColor(requireContext(), R.color.correct_green))
+            binding.tvCorrectAnswer.visibility = View.GONE
+        } else {
+            binding.feedbackPanel.backgroundTintList = ContextCompat.getColorStateList(requireContext(), R.color.incorrect_red_bg)
+            binding.tvFeedback.text = "Chưa chính xác!"
+            binding.tvFeedback.setTextColor(ContextCompat.getColor(requireContext(), R.color.incorrect_red))
+            binding.tvCorrectAnswer.visibility = View.VISIBLE
+            binding.tvCorrectAnswer.text = correctAnswerText
+        }
+        binding.feedbackPanel.visibility = View.VISIBLE
+        binding.feedbackPanel.translationY = binding.feedbackPanel.height.toFloat()
+        binding.feedbackPanel.animate().translationY(0f).setDuration(300).start()
+        binding.btnCheck.visibility = View.GONE
+    }
+
+    private fun hideFeedbackPanel() {
+        binding.feedbackPanel.visibility = View.GONE
+        binding.feedbackPanel.translationY = binding.feedbackPanel.height.toFloat()
     }
 
     // --- HIỂN THỊ HỘP THOẠI KHI HOÀN THÀNH ---
@@ -235,12 +244,12 @@ class ListenFillBlankFragment : Fragment(), TextToSpeech.OnInitListener {
     }
 
     // --- QUẢN LÝ VÒNG ĐỜI CỦA TTS ---
-    override fun onDestroy() {
+    override fun onDestroyView() {
         // Giải phóng tài nguyên TTS khi Fragment bị hủy để tránh memory leak
         if (::tts.isInitialized) {
             tts.stop()
             tts.shutdown()
         }
-        super.onDestroy()
+        super.onDestroyView()
     }
 }

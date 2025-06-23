@@ -6,15 +6,13 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.core.os.bundleOf
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.dex.engrisk.R
-import com.dex.engrisk.adapter.CompletedLessonAdapter
+import com.dex.engrisk.progress.adapter.CompletedLessonAdapter
 import com.dex.engrisk.databinding.FragmentProgressBinding
 import com.dex.engrisk.model.*
-import com.dex.engrisk.adapter.LearnedWordAdapter
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
