@@ -69,7 +69,7 @@ class FlashcardFragment : Fragment() {
     private fun fetchVocabulary() {
         binding.progressBar.visibility = View.VISIBLE
         val topicName = arguments?.getString("topicName")
-        var query: Query = FirebaseFirestore.getInstance().collection("vocabulary")
+        var query: Query = db.collection("vocabulary")
         // Nếu có tên chủ đề, thêm điều kiện lọc vào câu truy vấn
         if (!topicName.isNullOrEmpty()) {
             query = query.whereEqualTo("topic", topicName)

@@ -5,10 +5,8 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.dex.engrisk.databinding.ItemTopicBinding
 
-class TopicAdapter(
-    private val topics: List<String>,
-    private val onTopicClicked: (String) -> Unit
-) : RecyclerView.Adapter<TopicAdapter.ViewHolder>() {
+class TopicAdapter(private val topics: List<String>, private val onTopicClicked: (String) -> Unit) :
+    RecyclerView.Adapter<TopicAdapter.ViewHolder>() {
 
     inner class ViewHolder(val binding: ItemTopicBinding) : RecyclerView.ViewHolder(binding.root)
 

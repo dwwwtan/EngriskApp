@@ -8,4 +8,11 @@
     <color name="pressed_background">#FF9E9E9E</color>
     <color name="default_background">#FFF5F5F5</color>
     <color name="default_stroke_color">#FFBDBDBD</color>
+    <color name="beginner_green">#4CAF50</color>
+    <color name="intermediate_blue">#2196F3</color>
+    <color name="advanced_purple">#673AB7</color>
+    <color name="beginner_card">#FFF3F7</color>
+    <color name="intermediate_card">#C5D4FF</color>
+    <color name="advanced_card">#D6BEFF</color>
+    <color name="flashcard_card_background">#FFF3F7</color>
 </resources>

@@ -13,10 +13,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.dex.engrisk.R
 import com.dex.engrisk.adapter.CompletedLessonAdapter
 import com.dex.engrisk.databinding.FragmentProgressBinding
-import com.dex.engrisk.model.CompletedLesson
-import com.dex.engrisk.model.Lesson
-import com.dex.engrisk.model.LessonProgress
-import com.dex.engrisk.model.UserProgress
+import com.dex.engrisk.model.*
+import com.dex.engrisk.adapter.LearnedWordAdapter
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
@@ -39,6 +37,7 @@ class ProgressFragment : Fragment() {
         initFirebase()
         setupRecyclerView()
         fetchUserProgress()
+        setupClickListeners()
     }
 
     private fun initFirebase() {
@@ -46,101 +45,70 @@ class ProgressFragment : Fragment() {
         db = FirebaseFirestore.getInstance()
     }
 
-    private fun setupRecyclerView() {
-        // Bước 1: Khởi tạo adapter và truyền vào hàm xử lý sự kiện click
-        completedLessonAdapter = CompletedLessonAdapter(emptyList()) { clickedLesson ->
-            // Khi một item được nhấn, đoạn code này sẽ chạy.
-            // 'clickedLesson' là đối tượng chứa cả thông tin bài học và tiến độ.
+    private fun setupClickListeners() {
+        binding.cardWordsSummary.setOnClickListener {
+            findNavController().navigate(R.id.action_progressFragment_to_learnedWordsFragment)
+        }
+    }
 
+    private fun setupRecyclerView() {
+        // Khởi tạo adapter và truyền vào hàm xử lý sự kiện click
+        completedLessonAdapter = CompletedLessonAdapter(emptyList()) { clickedLesson ->
             val lessonDetails = clickedLesson.lessonDetails
             val bundle = bundleOf("lessonId" to lessonDetails.id)
-
             when (lessonDetails.type) {
-                "TRANSLATE_VI_EN", "TRANSLATE_EN_VI" -> {
-                    findNavController().navigate(R.id.action_progressFragment_to_translateFragment, bundle)
-                }
-                "LISTEN_FILL_BLANK" -> {
-                    findNavController().navigate(R.id.action_progressFragment_to_listenFillBlankFragment, bundle)
-                }
-                "LISTEN_CHOOSE_CORRECT" -> {
-                    findNavController().navigate(R.id.action_progressFragment_to_listenChooseCorrectFragment, bundle)
-                }
-                else -> {
-                    Toast.makeText(requireContext(), "Không thể mở lại loại bài học này.", Toast.LENGTH_SHORT).show()
-                }
+                "TRANSLATE_VI_EN", "TRANSLATE_EN_VI" -> findNavController().navigate(R.id.action_progressFragment_to_translateFragment, bundle)
+                "LISTEN_FILL_BLANK" -> findNavController().navigate(R.id.action_progressFragment_to_listenFillBlankFragment, bundle)
+                "LISTEN_CHOOSE_CORRECT" -> findNavController().navigate(R.id.action_progressFragment_to_listenChooseCorrectFragment, bundle)
             }
         }
         binding.rvCompletedLessons.apply {
             adapter = completedLessonAdapter
             layoutManager = LinearLayoutManager(requireContext())
+            isNestedScrollingEnabled = false
         }
     }
 
     private fun fetchUserProgress() {
         binding.progressBar.visibility = View.VISIBLE
-        val uid = firebaseAuth.currentUser?.uid ?: return
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
-        // BƯỚC A: LẤY DỮ LIỆU TIẾN ĐỘ
         db.collection("userProgress").document(uid).get()
-            .addOnSuccessListener { document ->
-                val userProgress = document.toObject(UserProgress::class.java)
-                val progressMap = userProgress?.lessonProgress
+            .addOnCompleteListener { task ->
+                binding.progressBar.visibility = View.GONE
+                if (task.isSuccessful) {
+                    val userProgress = task.result.toObject(UserProgress::class.java)
+                    // Cập nhật số liệu thống kê
+                    binding.tvLessonsCompletedCount.text = (userProgress?.lessonProgress?.size ?: 0).toString()
+                    binding.tvWordsLearnedCount.text = (userProgress?.vocabularyProgress?.filterValues { it.isLearned }?.size ?: 0).toString()
 
-                if (userProgress != null && !progressMap.isNullOrEmpty()) {
-                    // Cập nhật số liệu tổng quan
-                    binding.tvLessonsCompletedCount.text = progressMap.size.toString()
-                    // BƯỚC B: LẤY CHI TIẾT CÁC BÀI HỌC TƯƠNG ỨNG
-                    fetchLessonDetails(progressMap)
+                    // Xử lý danh sách bài học
+                    userProgress?.lessonProgress?.let {
+                        if (it.isNotEmpty()) fetchLessonDetails(it)
+                    }
                 } else {
-                    Log.d(TAG, "No progress found for user $uid")
-                    binding.tvLessonsCompletedCount.text = "0"
+                    Log.e(TAG, "Error fetching user progress", task.exception)
                 }
-            }
-            .addOnFailureListener { exception ->
-                Log.e(TAG, "Error fetching user progress", exception)
             }
     }
 
     private fun fetchLessonDetails(progressMap: Map<String, LessonProgress>) {
-        // Lấy danh sách các ID bài học từ map tiến độ
         val lessonIds = progressMap.keys.toList()
         if (lessonIds.isEmpty()) {
-            updateCompletedLessonsList(emptyList())
+            binding.rvCompletedLessons.visibility = View.GONE // Ẩn nếu không có gì
             return
         }
 
-        // Dùng truy vấn "in" để lấy tất cả document có ID nằm trong danh sách lessonIds
         db.collection("lessons").whereIn(FieldPath.documentId(), lessonIds).get()
             .addOnSuccessListener { lessonSnapshots ->
                 val lessonDetailsMap = lessonSnapshots.toObjects(Lesson::class.java).associateBy { it.id }
-                // BƯỚC C: GỘP HAI NGUỒN DỮ LIỆU
-                val completedLessons = mutableListOf<CompletedLesson>()
-                for ((lessonId, progress) in progressMap) {
+                val completedLessons = progressMap.mapNotNull { (lessonId, progress) ->
                     lessonDetailsMap[lessonId]?.let { lesson ->
-                        completedLessons.add(CompletedLesson(lessonDetails = lesson, progressDetails = progress))
+                        CompletedLesson(lessonDetails = lesson, progressDetails = progress)
                     }
                 }
-                updateCompletedLessonsList(completedLessons)
+                binding.rvCompletedLessons.visibility = View.VISIBLE
+                completedLessonAdapter.updateData(completedLessons)
             }
-            .addOnFailureListener { exception ->
-                Log.e(TAG, "Error fetching lesson details", exception)
-                updateCompletedLessonsList(emptyList())
-            }
-    }
-
-    private fun updateCompletedLessonsList(lessons: List<CompletedLesson>) {
-        binding.progressBar.visibility = View.GONE
-        Log.d(TAG, "updateCompletedLessonsList được gọi với danh sách có ${lessons.size} phần tử.")
-
-        if (lessons.isEmpty()) {
-            binding.rvCompletedLessons.visibility = View.GONE
-            binding.tvHistoryLabel.visibility = View.GONE
-            binding.tvLessonsCompletedCount.text = "0"
-            completedLessonAdapter.updateData(emptyList())
-        } else {
-            binding.rvCompletedLessons.visibility = View.VISIBLE
-            binding.tvHistoryLabel.visibility = View.VISIBLE
-            completedLessonAdapter.updateData(lessons)
-        }
     }
 }

@@ -45,6 +45,9 @@
         <action
             android:id="@+id/action_progressFragment_to_listenChooseCorrectFragment"
             app:destination="@id/listenChooseCorrectFragment" />
+        <action
+            android:id="@+id/action_progressFragment_to_learnedWordsFragment"
+            app:destination="@id/learnedWordsFragment" />
     </fragment>
 
     <!-- Profile Fragment -->
@@ -120,5 +123,12 @@
             app:nullable="true"
             android:defaultValue="@null" />
     </fragment>
+
+    <!-- Learned Words Fragment -->
+    <fragment
+        android:id="@+id/learnedWordsFragment"
+        android:name="com.dex.engrisk.progress.LearnedWordsFragment"
+        android:label="Từ vựng đã thuộc"
+        tools:layout="@layout/fragment_learned_words" />
 
 </navigation>

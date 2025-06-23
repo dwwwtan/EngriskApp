@@ -1,5 +1,6 @@
 package com.dex.engrisk.adapter
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
@@ -8,7 +9,6 @@ import com.dex.engrisk.model.CompletedLesson
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-// Sửa constructor để nhận vào danh sách đối tượng mới
 class CompletedLessonAdapter(
     private var completedLessons: List<CompletedLesson>,
     private val onItemClicked: (CompletedLesson) -> Unit
@@ -41,6 +41,7 @@ class CompletedLessonAdapter(
 
     override fun getItemCount(): Int = completedLessons.size
 
+    @SuppressLint("NotifyDataSetChanged")
     fun updateData(newCompletedLessons: List<CompletedLesson>) {
         completedLessons = newCompletedLessons
         notifyDataSetChanged()
