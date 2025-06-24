@@ -22,8 +22,8 @@ class MainActivity : AppCompatActivity() {
 
     private val TAG = "MainActivity"
     private lateinit var binding: ActivityMainBinding
-    private lateinit var navController: NavController
     private lateinit var navHostFragment: NavHostFragment
+    private lateinit var navController: NavController
     private lateinit var firebaseAuth: FirebaseAuth
     private lateinit var db: FirebaseFirestore
 
@@ -90,14 +90,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Override hàm này để xử lý sự kiện khi người dùng nhấn nút Back trên Toolbar
     override fun onSupportNavigateUp(): Boolean {
         return navController.navigateUp() || super.onSupportNavigateUp()
     }
 
-    /**
-     * Hàm này sẽ lấy thông tin người dùng từ Firestore và đặt vào ViewModel.
-     */
     private fun fetchUserProfile() {
         val uid = firebaseAuth.currentUser?.uid ?: return
 

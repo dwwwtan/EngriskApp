@@ -16,12 +16,12 @@ plugins {
 
 android {
     namespace = "com.dex.engrisk"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.dex.engrisk"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -98,7 +98,7 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.4.0")
 
     // Material Components
-    implementation("androidx.compose.material:material:1.8.2")
+    implementation("androidx.compose.material:material:1.8.3")
 
     // *** Navigation Component ***
     // Navigation Component for Android, used for managing app navigation
@@ -118,13 +118,13 @@ dependencies {
     androidTestImplementation("androidx.navigation:navigation-testing:$nav_version")
 
     // JSON serialization library, works with the Kotlin serialization plugin
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
 
     // Glide for image loading
     implementation("com.github.bumptech.glide:glide:4.16.0")
 
     // Coroutines for asynchronous programming
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 
     // Splash Screen
     implementation("androidx.core:core-splashscreen:1.0.0")
