@@ -1,3 +1,9 @@
+[English](#english) | [Tiếng Việt](#tiếng-việt)
+
+---
+
+# English
+
 # Engrisk - A Comprehensive English Learning App 🚀
 
 **Engrisk** is a mobile application project for the Android OS, built with the goal of providing users with a comprehensive and personalized English learning tool. The application allows users to learn through structured lessons, practice vocabulary with flashcards, and track their progress in detail.
@@ -81,7 +87,9 @@ This project was built using modern technologies and architecture patterns recom
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
 
-----------------------------------------------------------------------------------------------------------------------------------------------
+---
+
+# Tiếng Việt
 
 # Engrisk - Ứng dụng Học Tiếng Anh Toàn diện 🚀
 
